@@ -2,8 +2,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { StudentAuthProvider } from "@/context/StudentAuthContext";
+import { AcademicYearProvider } from "@/context/AcademicYearContext";
+import LoginPage from "./pages/LoginPage";
+import LinkStudentPage from "./pages/LinkStudentPage";
+import StudentLayout from "./components/StudentLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import StudentDashboard from "./pages/StudentDashboard";
+import HomeworkPage from "./pages/HomeworkPage";
+import ResultsPage from "./pages/ResultsPage";
+import ComplaintsPage from "./pages/ComplaintsPage";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import AcademicPerformancePage from "./pages/AcademicPerformancePage";
+import AIInsightPage from "./pages/AIInsightPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,11 +26,31 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <StudentAuthProvider>
+          <AcademicYearProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/link-student" element={<LinkStudentPage />} />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/student-dashboard" element={<StudentDashboard />} />
+                <Route path="/homework" element={<HomeworkPage />} />
+                <Route path="/results" element={<ResultsPage />} />
+                <Route path="/complaints" element={<ComplaintsPage />} />
+                <Route path="/announcements" element={<AnnouncementsPage />} />
+                <Route path="/academic-performance" element={<AcademicPerformancePage />} />
+                <Route path="/ai-insight" element={<AIInsightPage />} />
+              </Route>
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AcademicYearProvider>
+        </StudentAuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
