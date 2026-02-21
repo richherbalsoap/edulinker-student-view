@@ -1,23 +1,27 @@
 import { useEffect, useState } from 'react';
+import { useStudentAuth } from '@/context/StudentAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Bell } from 'lucide-react';
 
 const AnnouncementsPage = () => {
+  const { schoolId } = useStudentAuth();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!schoolId) return;
     const fetch = async () => {
       setLoading(true);
       const { data } = await supabase
         .from('announcements')
         .select('*')
+        .eq('school_id', schoolId)
         .order('created_at', { ascending: false });
       setAnnouncements(data || []);
       setLoading(false);
     };
     fetch();
-  }, []);
+  }, [schoolId]);
 
   const typeBadgeColor = (type: string | null) => {
     switch (type?.toLowerCase()) {

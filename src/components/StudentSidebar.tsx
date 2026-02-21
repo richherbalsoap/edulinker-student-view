@@ -46,8 +46,8 @@ const StudentSidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean; toggleSide
   const { student, logout } = useStudentAuth();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     navigate('/login');
   };
 

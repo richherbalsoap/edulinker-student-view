@@ -10,13 +10,16 @@ const StudentDashboard = () => {
   const [results, setResults] = useState<any[]>([]);
   const [homeworkCount, setHomeworkCount] = useState(0);
 
+  const { schoolId } = useStudentAuth();
+
   useEffect(() => {
-    if (!student) return;
+    if (!student || !schoolId) return;
     const fetchData = async () => {
       const { data: res } = await supabase
         .from('results')
         .select('*')
         .eq('student_id', student.id)
+        .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
       setResults(res || []);
@@ -26,12 +29,13 @@ const StudentDashboard = () => {
         .select('*', { count: 'exact', head: true })
         .eq('standard', student.standard)
         .eq('section', student.section)
+        .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
       setHomeworkCount(count || 0);
     };
     fetchData();
-  }, [student, startDate, endDate]);
+  }, [student, schoolId, startDate, endDate]);
 
   const overallPercentage = useMemo(() => {
     if (results.length === 0) return 0;

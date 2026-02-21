@@ -13,14 +13,17 @@ const AcademicPerformancePage = () => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { schoolId } = useStudentAuth();
+
   useEffect(() => {
-    if (!student) return;
+    if (!student || !schoolId) return;
     const fetch = async () => {
       setLoading(true);
       const { data } = await supabase
         .from('results')
         .select('*')
         .eq('student_id', student.id)
+        .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: true });
@@ -28,7 +31,7 @@ const AcademicPerformancePage = () => {
       setLoading(false);
     };
     fetch();
-  }, [student, startDate, endDate]);
+  }, [student, schoolId, startDate, endDate]);
 
   const subjectPerformance = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};

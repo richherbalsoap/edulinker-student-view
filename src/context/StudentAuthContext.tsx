@@ -1,6 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
 
 interface StudentData {
   id: string;
@@ -10,107 +9,105 @@ interface StudentData {
   avatar_url: string | null;
 }
 
+interface SchoolData {
+  id: string;
+  school_name: string;
+}
+
 interface StudentAuthContextType {
   isLoggedIn: boolean;
-  user: User | null;
-  session: Session | null;
   loading: boolean;
   student: StudentData | null;
-  isStudentLinked: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  linkStudent: (secretId: string) => Promise<void>;
+  schoolId: string | null;
+  schools: SchoolData[];
+  fetchSchools: () => Promise<void>;
+  login: (schoolId: string, secretId: string) => Promise<void>;
+  logout: () => void;
 }
 
 const StudentAuthContext = createContext<StudentAuthContextType | null>(null);
 
 const LINKED_STUDENT_KEY = 'linked_student_id';
+const LINKED_SCHOOL_KEY = 'linked_school_id';
 
 export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState<StudentData | null>(null);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [schools, setSchools] = useState<SchoolData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchStudentById = async (studentId: string) => {
-    const { data, error } = await supabase
-      .from('students')
-      .select('id, name, standard, section, avatar_url')
-      .eq('id', studentId)
-      .maybeSingle();
-    if (data && !error) {
-      setStudent(data);
-    } else {
-      // Student record no longer exists, clear localStorage
-      localStorage.removeItem(LINKED_STUDENT_KEY);
-      setStudent(null);
-    }
-  };
-
+  // On mount, restore from localStorage
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (!session) {
-        setStudent(null);
-        localStorage.removeItem(LINKED_STUDENT_KEY);
-      }
+    const savedStudentId = localStorage.getItem(LINKED_STUDENT_KEY);
+    const savedSchoolId = localStorage.getItem(LINKED_SCHOOL_KEY);
+    if (savedStudentId && savedSchoolId) {
+      setSchoolId(savedSchoolId);
+      // Fetch student data to validate it still exists
+      supabase
+        .from('students')
+        .select('id, name, standard, section, avatar_url')
+        .eq('id', savedStudentId)
+        .eq('school_id', savedSchoolId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setStudent(data);
+          } else {
+            // Invalid — clear
+            localStorage.removeItem(LINKED_STUDENT_KEY);
+            localStorage.removeItem(LINKED_SCHOOL_KEY);
+            setSchoolId(null);
+          }
+          setLoading(false);
+        });
+    } else {
       setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session) {
-        const savedStudentId = localStorage.getItem(LINKED_STUDENT_KEY);
-        if (savedStudentId) {
-          fetchStudentById(savedStudentId);
-        }
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
+  const fetchSchools = useCallback(async () => {
+    const { data } = await supabase
+      .from('schools')
+      .select('id, school_name')
+      .order('school_name', { ascending: true });
+    setSchools(data || []);
+  }, []);
 
-  const logout = async () => {
-    localStorage.removeItem(LINKED_STUDENT_KEY);
-    setStudent(null);
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  const linkStudent = async (secretId: string) => {
+  const login = async (selectedSchoolId: string, secretId: string) => {
     const { data, error } = await supabase
       .from('students')
       .select('id, name, standard, section, avatar_url')
       .eq('secret_id', secretId)
+      .eq('school_id', selectedSchoolId)
       .maybeSingle();
 
     if (error) throw new Error('Failed to verify Secret ID');
-    if (!data) throw new Error('Invalid Secret ID. No student found.');
+    if (!data) throw new Error('Invalid Secret ID or School. No student found.');
 
     setStudent(data);
+    setSchoolId(selectedSchoolId);
     localStorage.setItem(LINKED_STUDENT_KEY, data.id);
+    localStorage.setItem(LINKED_SCHOOL_KEY, selectedSchoolId);
+  };
+
+  const logout = () => {
+    localStorage.removeItem(LINKED_STUDENT_KEY);
+    localStorage.removeItem(LINKED_SCHOOL_KEY);
+    setStudent(null);
+    setSchoolId(null);
   };
 
   return (
     <StudentAuthContext.Provider
       value={{
-        isLoggedIn: !!session,
-        user,
-        session,
+        isLoggedIn: !!student && !!schoolId,
         loading,
         student,
-        isStudentLinked: !!student,
+        schoolId,
+        schools,
+        fetchSchools,
         login,
         logout,
-        linkStudent,
       }}
     >
       {children}
