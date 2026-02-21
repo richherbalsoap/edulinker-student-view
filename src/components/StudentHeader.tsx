@@ -8,8 +8,8 @@ const StudentHeader = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
   const { academicYear, setAcademicYear, yearOptions } = useAcademicYear();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     navigate('/login');
   };
 

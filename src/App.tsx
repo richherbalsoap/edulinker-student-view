@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StudentAuthProvider } from "@/context/StudentAuthContext";
 import { AcademicYearProvider } from "@/context/AcademicYearContext";
 import LoginPage from "./pages/LoginPage";
-import LinkStudentPage from "./pages/LinkStudentPage";
 import StudentLayout from "./components/StudentLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentDashboard from "./pages/StudentDashboard";
@@ -30,7 +29,6 @@ const App = () => (
           <AcademicYearProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/link-student" element={<LinkStudentPage />} />
               <Route
                 element={
                   <ProtectedRoute>

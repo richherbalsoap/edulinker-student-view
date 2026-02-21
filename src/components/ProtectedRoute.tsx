@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn, isStudentLinked, loading } = useStudentAuth();
+  const { isLoggedIn, loading } = useStudentAuth();
 
   if (loading) {
     return (
@@ -13,7 +13,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!isLoggedIn) return <Navigate to="/login" replace />;
-  if (!isStudentLinked) return <Navigate to="/link-student" replace />;
 
   return <>{children}</>;
 };

@@ -20,19 +20,22 @@ const AIInsightPage = () => {
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const { schoolId } = useStudentAuth();
+
   useEffect(() => {
-    if (!student) return;
+    if (!student || !schoolId) return;
     const fetch = async () => {
       const { data } = await supabase
         .from('results')
         .select('*')
         .eq('student_id', student.id)
+        .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
       setResults(data || []);
     };
     fetch();
-  }, [student, startDate, endDate]);
+  }, [student, schoolId, startDate, endDate]);
 
   const analytics = useMemo(() => {
     if (results.length === 0) return null;

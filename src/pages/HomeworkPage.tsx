@@ -10,8 +10,10 @@ const HomeworkPage = () => {
   const [homework, setHomework] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { schoolId } = useStudentAuth();
+
   useEffect(() => {
-    if (!student) return;
+    if (!student || !schoolId) return;
     const fetch = async () => {
       setLoading(true);
       const { data } = await supabase
@@ -19,6 +21,7 @@ const HomeworkPage = () => {
         .select('*')
         .eq('standard', student.standard)
         .eq('section', student.section)
+        .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
@@ -26,7 +29,7 @@ const HomeworkPage = () => {
       setLoading(false);
     };
     fetch();
-  }, [student, startDate, endDate]);
+  }, [student, schoolId, startDate, endDate]);
 
   return (
     <div className="space-y-6 relative z-10 px-4 py-6">
