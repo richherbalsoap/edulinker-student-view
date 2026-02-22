@@ -4,6 +4,14 @@ import { useAcademicYear } from '@/context/AcademicYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { FileText, ExternalLink } from 'lucide-react';
 
+const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
+
+const getFilePublicUrl = (filePath: string) => {
+  if (!filePath) return '';
+  if (filePath.startsWith('http')) return filePath;
+  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${filePath}`;
+};
+
 const ResultsPage = () => {
   const { student } = useStudentAuth();
   const { startDate, endDate } = useAcademicYear();
