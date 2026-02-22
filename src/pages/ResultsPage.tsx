@@ -9,7 +9,15 @@ const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
 const getFilePublicUrl = (filePath: string) => {
   if (!filePath) return '';
   if (filePath.startsWith('http')) return filePath;
-  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${filePath}`;
+  // If path already has a folder prefix, use as-is; otherwise add results/ prefix
+  const path = filePath.includes('/') ? filePath : `results/${filePath}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${path}`;
+};
+
+const isImageFile = (filePath: string) => {
+  if (!filePath) return false;
+  const lower = filePath.toLowerCase();
+  return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp');
 };
 
 const ResultsPage = () => {
@@ -65,7 +73,10 @@ const ResultsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {results.map(r => (
+                {results.map(r => {
+                  const fileUrl = r.file_name ? getFilePublicUrl(r.file_name) : null;
+                  const isImage = r.file_name ? isImageFile(r.file_name) : false;
+                  return (
                   <tr key={r.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-4 text-foreground font-medium">{r.subject}</td>
                     <td className="px-6 py-4 text-foreground/80 text-center">{r.marks_obtained}</td>
@@ -76,8 +87,12 @@ const ResultsPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {r.file_name ? (
-                        <a href={getFilePublicUrl(r.file_name)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
+                      {fileUrl && isImage ? (
+                        <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                          <img src={fileUrl} alt={`${r.subject} result`} className="w-20 h-20 object-cover rounded-lg border border-primary/10 mx-auto" />
+                        </a>
+                      ) : fileUrl ? (
+                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
                           <ExternalLink size={14} /> View
                         </a>
                       ) : (
@@ -85,7 +100,8 @@ const ResultsPage = () => {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
