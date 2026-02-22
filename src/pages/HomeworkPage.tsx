@@ -2,15 +2,27 @@ import { useEffect, useState } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useAcademicYear } from '@/context/AcademicYearContext';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, ExternalLink } from 'lucide-react';
+import { BookOpen, ExternalLink, Image } from 'lucide-react';
+
+const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
+
+const getFilePublicUrl = (filePath: string) => {
+  if (!filePath) return '';
+  if (filePath.startsWith('http')) return filePath;
+  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${filePath}`;
+};
+
+const isImageFile = (filePath: string) => {
+  if (!filePath) return false;
+  const lower = filePath.toLowerCase();
+  return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp');
+};
 
 const HomeworkPage = () => {
-  const { student } = useStudentAuth();
+  const { student, schoolId } = useStudentAuth();
   const { startDate, endDate } = useAcademicYear();
   const [homework, setHomework] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const { schoolId } = useStudentAuth();
 
   useEffect(() => {
     if (!student || !schoolId) return;
@@ -46,22 +58,47 @@ const HomeworkPage = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {homework.map(hw => (
-            <div key={hw.id} className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-5 hover:border-primary/40 transition-all duration-300">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-foreground font-semibold text-lg">{hw.subject}</h3>
-                  <p className="text-foreground/70 mt-1">{hw.description}</p>
-                  <p className="text-muted-foreground text-xs mt-2">{new Date(hw.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          {homework.map(hw => {
+            const fileUrl = hw.file_url ? getFilePublicUrl(hw.file_url) : null;
+            const isImage = hw.file_url ? isImageFile(hw.file_url) : false;
+
+            return (
+              <div key={hw.id} className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-5 hover:border-primary/40 transition-all duration-300">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-foreground font-semibold text-lg">{hw.subject}</h3>
+                    <p className="text-foreground/70 mt-1">{hw.description}</p>
+                    <p className="text-muted-foreground text-xs mt-2">
+                      {new Date(hw.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  {fileUrl && !isImage && (
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors">
+                      <ExternalLink size={16} />
+                    </a>
+                  )}
                 </div>
-                {hw.file_url && (
-                  <a href={hw.file_url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors">
-                    <ExternalLink size={16} />
-                  </a>
+                {fileUrl && isImage && (
+                  <div className="mt-4">
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={fileUrl}
+                        alt={`${hw.subject} homework`}
+                        className="w-full max-h-96 object-contain rounded-lg border border-primary/10"
+                      />
+                    </a>
+                  </div>
+                )}
+                {fileUrl && !isImage && (
+                  <div className="mt-3">
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                      <ExternalLink size={14} /> View Attachment
+                    </a>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
