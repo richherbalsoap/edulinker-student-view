@@ -77,7 +77,7 @@ const ResultsPage = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       {r.file_name ? (
-                        <a href={r.file_name} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
+                        <a href={getFilePublicUrl(r.file_name)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
                           <ExternalLink size={14} /> View
                         </a>
                       ) : (
