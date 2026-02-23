@@ -4,14 +4,12 @@ import { useAcademicYear } from '@/context/AcademicYearContext';
 import { supabase } from '@/integrations/supabase/client';
 import { FileText, ExternalLink } from 'lucide-react';
 
-const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
-
 const getFilePublicUrl = (filePath: string) => {
   if (!filePath) return '';
   if (filePath.startsWith('http')) return filePath;
-  // If path already has a folder prefix, use as-is; otherwise add results/ prefix
   const path = filePath.includes('/') ? filePath : `results/${filePath}`;
-  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${path}`;
+  const { data } = supabase.storage.from('edulinker-files').getPublicUrl(path);
+  return data.publicUrl;
 };
 
 const isImageFile = (filePath: string) => {
