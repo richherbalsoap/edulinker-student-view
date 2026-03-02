@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { KeyRound, School, AlertTriangle } from 'lucide-react';
+import { KeyRound, AlertTriangle, Hash } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,11 +9,11 @@ import { toast } from 'sonner';
 const MAX_ATTEMPTS = 5;
 
 const LoginPage = () => {
-  const [selectedSchool, setSelectedSchool] = useState('');
   const [secretId, setSecretId] = useState('');
+  const [rollNo, setRollNo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [attempts, setAttempts] = useState(0);
-  const { login, isLoggedIn, schools, fetchSchools } = useStudentAuth();
+  const { login, isLoggedIn } = useStudentAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,10 +21,6 @@ const LoginPage = () => {
       navigate('/student-dashboard', { replace: true });
     }
   }, [isLoggedIn, navigate]);
-
-  useEffect(() => {
-    fetchSchools();
-  }, [fetchSchools]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -41,12 +37,11 @@ const LoginPage = () => {
 
     setSubmitting(true);
 
-    // Progressive delay
     const delay = (attempts + 1) * 1000;
     await new Promise(resolve => setTimeout(resolve, delay));
 
     try {
-      await login(selectedSchool, secretId);
+      await login(secretId, rollNo);
       toast.success('Login successful!');
       navigate('/student-dashboard');
     } catch (error: any) {
@@ -96,7 +91,7 @@ const LoginPage = () => {
                 <span className="text-primary">EDU</span>Linker
               </motion.h1>
               <p className="text-muted-foreground text-sm font-medium tracking-wide">
-                Student Portal — Select your school & enter Secret ID
+                Student Portal — Enter your Secret ID & Roll Number
               </p>
             </div>
 
@@ -108,30 +103,6 @@ const LoginPage = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="school" className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
-                  <School size={12} className="inline mr-1 mb-0.5" />
-                  Select School
-                </label>
-                <select
-                  id="school"
-                  value={selectedSchool}
-                  onChange={(e) => setSelectedSchool(e.target.value)}
-                  required
-                  disabled={attempts >= MAX_ATTEMPTS}
-                  className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 disabled:opacity-50 appearance-none cursor-pointer"
-                >
-                  <option value="" disabled className="bg-background text-muted-foreground">
-                    — Choose your school —
-                  </option>
-                  {schools.map(s => (
-                    <option key={s.id} value={s.id} className="bg-background text-foreground">
-                      {s.school_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div className="space-y-2">
                 <label htmlFor="secretId" className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
                   <KeyRound size={12} className="inline mr-1 mb-0.5" />
@@ -149,9 +120,26 @@ const LoginPage = () => {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label htmlFor="rollNo" className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
+                  <Hash size={12} className="inline mr-1 mb-0.5" />
+                  Roll Number
+                </label>
+                <input
+                  id="rollNo"
+                  type="number"
+                  value={rollNo}
+                  onChange={(e) => setRollNo(e.target.value)}
+                  required
+                  disabled={attempts >= MAX_ATTEMPTS}
+                  className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 text-center text-lg disabled:opacity-50"
+                  placeholder="Enter your roll number"
+                />
+              </div>
+
               <Button
                 type="submit"
-                disabled={submitting || attempts >= MAX_ATTEMPTS || !selectedSchool}
+                disabled={submitting || attempts >= MAX_ATTEMPTS || !secretId || !rollNo}
                 className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-2xl transition-all duration-300 transform active:scale-[0.98] shadow-[0_0_20px_hsl(51,100%,50%,0.3)] hover:shadow-[0_0_30px_hsl(51,100%,50%,0.5)]"
               >
                 <KeyRound size={20} className="mr-2" />
