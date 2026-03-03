@@ -57,48 +57,47 @@ const HomeworkPage = () => {
           <p className="text-foreground/50 text-lg">No homework assigned yet.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {homework.map(hw => {
-            const fileUrl = hw.file_url ? getFilePublicUrl(hw.file_url) : null;
-            const isImage = hw.file_url ? isImageFile(hw.file_url) : false;
-
-            return (
-              <div key={hw.id} className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-5 hover:border-primary/40 transition-all duration-300">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-foreground font-semibold text-lg">{hw.subject}</h3>
-                    <p className="text-foreground/70 mt-1">{hw.description}</p>
-                    <p className="text-muted-foreground text-xs mt-2">
-                      {new Date(hw.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  {fileUrl && !isImage && (
-                    <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg border border-primary/20 text-primary hover:bg-primary/10 transition-colors">
-                      <ExternalLink size={16} />
-                    </a>
-                  )}
-                </div>
-                {fileUrl && isImage && (
-                  <div className="mt-4">
-                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={fileUrl}
-                        alt={`${hw.subject} homework`}
-                        className="w-full max-h-96 object-contain rounded-lg border border-primary/10"
-                      />
-                    </a>
-                  </div>
-                )}
-                {fileUrl && !isImage && (
-                  <div className="mt-3">
-                    <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                      <ExternalLink size={14} /> View Attachment
-                    </a>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-primary/20">
+                  <th className="text-left px-6 py-4 text-primary text-sm font-semibold">Subject</th>
+                  <th className="text-left px-6 py-4 text-primary text-sm font-semibold">Description</th>
+                  <th className="text-center px-6 py-4 text-primary text-sm font-semibold">Date</th>
+                  <th className="text-center px-6 py-4 text-primary text-sm font-semibold">File</th>
+                </tr>
+              </thead>
+              <tbody>
+                {homework.map(hw => {
+                  const fileUrl = hw.file_url ? getFilePublicUrl(hw.file_url) : null;
+                  const isImage = hw.file_url ? isImageFile(hw.file_url) : false;
+                  return (
+                    <tr key={hw.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
+                      <td className="px-6 py-4 text-foreground font-medium">{hw.subject}</td>
+                      <td className="px-6 py-4 text-foreground/80">{hw.description}</td>
+                      <td className="px-6 py-4 text-foreground/80 text-center text-sm">
+                        {new Date(hw.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {fileUrl && isImage ? (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                            <img src={fileUrl} alt={`${hw.subject} homework`} className="w-20 h-20 object-cover rounded-lg border border-primary/10 mx-auto" />
+                          </a>
+                        ) : fileUrl ? (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
+                            <ExternalLink size={14} /> View
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
