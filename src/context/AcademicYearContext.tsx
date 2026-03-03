@@ -23,7 +23,7 @@ function getCurrentAcademicYear(): string {
 
 function generateYearOptions(): string[] {
   const options: string[] = [];
-  for (let y = 2026; y <= 2050; y++) {
+  for (let y = 2024; y <= 2050; y++) {
     options.push(`${y}-${y + 1}`);
   }
   return options;
