@@ -58,31 +58,45 @@ const ComplaintsPage = () => {
           <p className="text-foreground/50 text-lg">No complaints recorded.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {complaints.map(c => {
-            const fileUrl = c.file_url ? getFilePublicUrl(c.file_url) : null;
-            const isImage = c.file_url ? isImageFile(c.file_url) : false;
-            return (
-              <div key={c.id} className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-5">
-                <p className="text-foreground/80">{c.description}</p>
-                <p className="text-muted-foreground text-xs mt-3">{new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                {fileUrl && isImage && (
-                  <div className="mt-4">
-                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-                      <img src={fileUrl} alt="Complaint attachment" className="w-full max-h-96 object-contain rounded-lg border border-primary/10" />
-                    </a>
-                  </div>
-                )}
-                {fileUrl && !isImage && (
-                  <div className="mt-3">
-                    <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                      <ExternalLink size={14} /> View Attachment
-                    </a>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-primary/20">
+                  <th className="text-left px-6 py-4 text-primary text-sm font-semibold">Description</th>
+                  <th className="text-center px-6 py-4 text-primary text-sm font-semibold">Date</th>
+                  <th className="text-center px-6 py-4 text-primary text-sm font-semibold">File</th>
+                </tr>
+              </thead>
+              <tbody>
+                {complaints.map(c => {
+                  const fileUrl = c.file_url ? getFilePublicUrl(c.file_url) : null;
+                  const isImage = c.file_url ? isImageFile(c.file_url) : false;
+                  return (
+                    <tr key={c.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
+                      <td className="px-6 py-4 text-foreground/80">{c.description}</td>
+                      <td className="px-6 py-4 text-foreground/80 text-center text-sm">
+                        {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {fileUrl && isImage ? (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                            <img src={fileUrl} alt="Complaint attachment" className="w-20 h-20 object-cover rounded-lg border border-primary/10 mx-auto" />
+                          </a>
+                        ) : fileUrl ? (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
+                            <ExternalLink size={14} /> View
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
