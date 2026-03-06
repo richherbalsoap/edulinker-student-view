@@ -59,13 +59,13 @@ const HomeworkPage = () => {
       ) : (
         <div className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead>
                 <tr className="border-b border-primary/20">
-                  <th className="text-left px-6 py-4 text-primary text-sm font-semibold">Subject</th>
-                  <th className="text-left px-6 py-4 text-primary text-sm font-semibold">Description</th>
-                  <th className="text-center px-6 py-4 text-primary text-sm font-semibold">Date</th>
-                  <th className="text-center px-6 py-4 text-primary text-sm font-semibold">File</th>
+                  <th className="text-left px-3 sm:px-6 py-4 text-primary text-sm font-semibold w-[25%]">Subject</th>
+                  <th className="text-left px-3 sm:px-6 py-4 text-primary text-sm font-semibold w-[30%]">Description</th>
+                  <th className="text-center px-2 sm:px-6 py-4 text-primary text-sm font-semibold w-[20%]">Date</th>
+                  <th className="text-center px-2 sm:px-6 py-4 text-primary text-sm font-semibold w-[25%]">File</th>
                 </tr>
               </thead>
               <tbody>
@@ -74,18 +74,18 @@ const HomeworkPage = () => {
                   const isImage = hw.file_url ? isImageFile(hw.file_url) : false;
                   return (
                     <tr key={hw.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
-                      <td className="px-6 py-4 text-foreground font-medium">{hw.subject}</td>
-                      <td className="px-6 py-4 text-foreground/80">{hw.description}</td>
-                      <td className="px-6 py-4 text-foreground/80 text-center text-sm">
+                      <td className="px-3 sm:px-6 py-4 text-foreground font-medium text-sm break-words">{hw.subject}</td>
+                      <td className="px-3 sm:px-6 py-4 text-foreground/80 text-sm break-words">{hw.description}</td>
+                      <td className="px-2 sm:px-6 py-4 text-foreground/80 text-center text-xs sm:text-sm">
                         {new Date(hw.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-2 sm:px-6 py-4 text-center">
                         {fileUrl && isImage ? (
                           <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-                            <img src={fileUrl} alt={`${hw.subject} homework`} className="w-20 h-20 object-cover rounded-lg border border-primary/10 mx-auto" />
+                            <img src={fileUrl} alt={`${hw.subject} homework`} className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-lg border border-primary/10 mx-auto" />
                           </a>
                         ) : fileUrl ? (
-                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs sm:text-sm">
                             <ExternalLink size={14} /> View
                           </a>
                         ) : (
