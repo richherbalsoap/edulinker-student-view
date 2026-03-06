@@ -28,8 +28,8 @@ const StudentDashboard = () => {
       const { data: hw, count } = await supabase
         .from('homework')
         .select('*', { count: 'exact' })
-        .eq('standard', student.standard)
-        .eq('section', student.section)
+        .ilike('standard', student.standard)
+        .ilike('section', student.section)
         .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
