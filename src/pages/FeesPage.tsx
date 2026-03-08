@@ -70,27 +70,26 @@ const FeesPage = () => {
             <table className="w-full table-fixed">
               <thead>
                 <tr className="border-b border-primary/20">
-                  <th className="text-left px-3 sm:px-6 py-4 text-primary text-sm font-semibold w-[30%]">Title</th>
-                  <th className="text-center px-2 sm:px-6 py-4 text-primary text-sm font-semibold w-[20%]">Amount</th>
-                  <th className="text-center px-2 sm:px-6 py-4 text-primary text-sm font-semibold w-[25%]">Due Date</th>
-                  <th className="text-center px-2 sm:px-6 py-4 text-primary text-sm font-semibold w-[25%]">Status</th>
+                  <th className="text-left px-3 sm:px-6 py-4 text-primary text-sm font-semibold w-[60%]">Title</th>
+                  <th className="text-center px-2 sm:px-6 py-4 text-primary text-sm font-semibold w-[40%]">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                {fees.map(fee => (
-                  <tr key={fee.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
-                    <td className="px-3 sm:px-6 py-4 text-foreground font-medium text-sm break-words">{fee.title}</td>
-                    <td className="px-2 sm:px-6 py-4 text-foreground/80 text-center text-sm font-semibold">₹{fee.amount}</td>
-                    <td className="px-2 sm:px-6 py-4 text-foreground/80 text-center text-xs sm:text-sm">
-                      {fee.due_date ? new Date(fee.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                    </td>
-                    <td className="px-2 sm:px-6 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(fee.status)}`}>
-                        {fee.status || 'Pending'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {fees.map(fee => {
+                  // Extract amount from title if fee.amount is not set
+                  const extractedAmount = fee.amount || (() => {
+                    const match = fee.title?.match(/(\d+)/);
+                    return match ? match[1] : '—';
+                  })();
+                  // Remove the number from the title for clean display
+                  const cleanTitle = fee.title?.replace(/\d+/, '').replace(/\s+/g, ' ').trim() || fee.title;
+                  return (
+                    <tr key={fee.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
+                      <td className="px-3 sm:px-6 py-4 text-foreground font-medium text-sm break-words">{cleanTitle}</td>
+                      <td className="px-2 sm:px-6 py-4 text-primary text-center text-lg font-bold">₹{extractedAmount}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
