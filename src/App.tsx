@@ -15,6 +15,7 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AcademicPerformancePage from "./pages/AcademicPerformancePage";
 import AIInsightPage from "./pages/AIInsightPage";
+import FeesPage from "./pages/FeesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
