@@ -20,6 +20,7 @@ const navItems: NavItemType[] = [
   { path: '/announcements', icon: Bell, label: 'Announcements' },
   { path: '/academic-performance', icon: BarChart3, label: 'Academic Performance' },
   { path: '/ai-insight', icon: Bot, label: 'AI Insight' },
+  { path: '/fees', icon: IndianRupee, label: 'Fees Reminder' },
 ];
 
 const SideNavItem = ({ item, onClick }: { item: NavItemType; onClick: () => void }) => (
