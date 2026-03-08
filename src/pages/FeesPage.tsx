@@ -14,15 +14,31 @@ const FeesPage = () => {
     if (!student || !schoolId) return;
     const fetchFees = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('fees_reminders')
-        .select('*')
-        .eq('student_id', student.id)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
-      setFees(data || []);
+      // Fetch fees assigned to this student directly OR to their class (standard/section)
+      const [byStudent, byClass] = await Promise.all([
+        supabase
+          .from('fees_reminders')
+          .select('*')
+          .eq('student_id', student.id)
+          .eq('school_id', schoolId)
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('fees_reminders')
+          .select('*')
+          .is('student_id', null)
+          .ilike('standard', student.standard)
+          .ilike('section', student.section)
+          .eq('school_id', schoolId)
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .order('created_at', { ascending: false }),
+      ]);
+      // Merge and deduplicate by id
+      const allFees = [...(byStudent.data || []), ...(byClass.data || [])];
+      const uniqueFees = Array.from(new Map(allFees.map(f => [f.id, f])).values());
+      setFees(uniqueFees);
       setLoading(false);
     };
     fetchFees();
