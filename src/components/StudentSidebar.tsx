@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, FileText, MessageSquare,
-  Bell, BarChart3, Bot, LogOut, X, GraduationCap
+  Bell, BarChart3, Bot, IndianRupee, LogOut, X, GraduationCap
 } from 'lucide-react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useNavigate } from 'react-router-dom';
