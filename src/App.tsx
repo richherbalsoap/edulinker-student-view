@@ -15,6 +15,7 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AcademicPerformancePage from "./pages/AcademicPerformancePage";
 import AIInsightPage from "./pages/AIInsightPage";
+import FeesPage from "./pages/FeesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/announcements" element={<AnnouncementsPage />} />
                 <Route path="/academic-performance" element={<AcademicPerformancePage />} />
                 <Route path="/ai-insight" element={<AIInsightPage />} />
+                <Route path="/fees" element={<FeesPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="*" element={<NotFound />} />
