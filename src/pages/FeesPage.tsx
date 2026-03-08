@@ -38,7 +38,7 @@ const FeesPage = () => {
       // Merge and deduplicate by id
       const allFees = [...(byStudent.data || []), ...(byClass.data || [])];
       const uniqueFees = Array.from(new Map(allFees.map(f => [f.id, f])).values());
-      setFees(data || []);
+      setFees(uniqueFees);
       setLoading(false);
     };
     fetchFees();
