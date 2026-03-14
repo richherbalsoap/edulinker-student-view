@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StudentData {
   id: string;
@@ -20,8 +20,8 @@ interface StudentAuthContextType {
 
 const StudentAuthContext = createContext<StudentAuthContextType | null>(null);
 
-const LINKED_STUDENT_KEY = 'linked_student_id';
-const LINKED_SCHOOL_KEY = 'linked_school_id';
+const LINKED_STUDENT_KEY = "linked_student_id";
+const LINKED_SCHOOL_KEY = "linked_school_id";
 
 export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [student, setStudent] = useState<StudentData | null>(null);
@@ -35,10 +35,10 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (savedStudentId && savedSchoolId) {
       setSchoolId(savedSchoolId);
       supabase
-        .from('students')
-        .select('id, name, standard, section, avatar_url')
-        .eq('id', savedStudentId)
-        .eq('school_id', savedSchoolId)
+        .from("students")
+        .select("id, name, standard, section, avatar_url")
+        .eq("id", savedStudentId)
+        .eq("school_id", savedSchoolId)
         .maybeSingle()
         .then(({ data }) => {
           if (data) {
@@ -56,15 +56,18 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   const login = async (secretId: string, rollNo: string) => {
+    const rollNoInt = parseInt(rollNo, 10);
+    if (isNaN(rollNoInt)) throw new Error("Roll number must be a valid number");
+
     const { data, error } = await supabase
-      .from('students')
-      .select('id, name, standard, section, avatar_url, school_id')
-      .eq('secret_id', secretId)
-      .eq('roll_no', rollNo)
+      .from("students")
+      .select("id, name, standard, section, avatar_url, school_id")
+      .eq("secret_id", secretId.trim())
+      .eq("roll_no", rollNoInt)
       .maybeSingle();
 
-    if (error) throw new Error('Failed to verify credentials');
-    if (!data) throw new Error('Invalid secret key or roll number');
+    if (error) throw new Error("Failed to verify credentials");
+    if (!data) throw new Error("Invalid secret key or roll number");
 
     const { school_id, ...studentData } = data;
     setStudent(studentData);
@@ -98,6 +101,6 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
 export const useStudentAuth = () => {
   const context = useContext(StudentAuthContext);
-  if (!context) throw new Error('useStudentAuth must be used within StudentAuthProvider');
+  if (!context) throw new Error("useStudentAuth must be used within StudentAuthProvider");
   return context;
 };
