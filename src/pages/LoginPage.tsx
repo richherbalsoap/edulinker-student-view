@@ -6,19 +6,20 @@ import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+const MAX_ATTEMPTS = 5;
+
 const LoginPage = () => {
   const [secretId, setSecretId] = useState("");
   const [rollNo, setRollNo] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [attempts, setAttempts] = useState(0);
+  // remainingAttempts = null means we don't know yet (no failed attempt shown)
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const [lockedOut, setLockedOut] = useState(false);
   const { login, isLoggedIn } = useStudentAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isLoggedIn) {
-      navigate("/student-dashboard", { replace: true });
-    }
+    if (isLoggedIn) navigate("/student-dashboard", { replace: true });
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (lockedOut) return;
+    if (lockedOut || submitting) return;
 
     const cleanSecretId = secretId.trim();
     const cleanRollNo = rollNo.trim();
@@ -45,10 +46,16 @@ const LoginPage = () => {
       navigate("/student-dashboard");
     } catch (error: any) {
       if (error.message === "TOO_MANY_ATTEMPTS") {
+        // Lockout screen dikhao — remaining = 0
+        setRemainingAttempts(0);
         setLockedOut(true);
       } else {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
+        // Error message mein "X attempts remaining" parse karo from context
+        // e.g. "Invalid Secret ID or Roll Number. 3 attempts remaining."
+        const match = error.message?.match(/(\d+) attempts remaining/);
+        if (match) {
+          setRemainingAttempts(parseInt(match[1], 10));
+        }
         toast.error(error.message);
       }
     } finally {
@@ -56,7 +63,7 @@ const LoginPage = () => {
     }
   };
 
-  // Lockout screen — refresh karo
+  // Lockout screen
   if (lockedOut) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden relative">
@@ -71,7 +78,7 @@ const LoginPage = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-card/40 backdrop-blur-[40px] border border-destructive/20 rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden ring-1 ring-destructive/10"
+            className="bg-card/40 backdrop-blur-[40px] border border-destructive/20 rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden"
           >
             <div className="relative p-10 sm:p-12 text-center space-y-6">
               <div className="flex justify-center">
@@ -79,16 +86,15 @@ const LoginPage = () => {
                   <ShieldAlert size={36} className="text-destructive" />
                 </div>
               </div>
-
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">Too Many Attempts</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  You've entered incorrect credentials 5 times. Please contact your{" "}
-                  <span className="text-primary font-semibold">Principal or Admin</span> to reset your access.
+                  You've entered incorrect credentials 5 times.
+                  <br />
+                  Please contact your <span className="text-primary font-semibold">Principal or Admin</span> to reset
+                  your access.
                 </p>
               </div>
-
-              {/* Same style as fee card in student management */}
               <div className="bg-destructive/5 border border-destructive/15 rounded-xl p-4 text-left space-y-1">
                 <div className="flex items-center gap-2 text-destructive/70 text-xs font-bold mb-2">
                   <AlertTriangle size={13} /> ACCOUNT LOCKED
@@ -100,7 +106,6 @@ const LoginPage = () => {
                   Ask your Principal to reset your login attempts from the Student Management panel.
                 </p>
               </div>
-
               <Button
                 onClick={() => window.location.reload()}
                 className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-2xl"
@@ -156,10 +161,11 @@ const LoginPage = () => {
               </p>
             </div>
 
-            {attempts > 0 && (
+            {/* Attempts warning — sirf tab dikhao jab pata ho */}
+            {remainingAttempts !== null && remainingAttempts > 0 && (
               <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 mb-6">
                 <AlertTriangle size={16} className="text-destructive shrink-0" />
-                <span className="text-destructive text-sm">{5 - attempts} attempts remaining</span>
+                <span className="text-destructive text-sm">{remainingAttempts} attempts remaining</span>
               </div>
             )}
 
