@@ -26,9 +26,9 @@ const HomeworkPage = () => {
 
   useEffect(() => {
     if (!student || !schoolId) return;
-    const fetch = async () => {
+    const fetchHomework = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('homework')
         .select('*')
         .ilike('standard', student.standard)
@@ -37,10 +37,13 @@ const HomeworkPage = () => {
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Homework fetch error:', error.message);
+      }
       setHomework(data || []);
       setLoading(false);
     };
-    fetch();
+    fetchHomework();
   }, [student, schoolId, startDate, endDate]);
 
   return (

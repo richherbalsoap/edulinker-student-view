@@ -10,17 +10,20 @@ const AnnouncementsPage = () => {
 
   useEffect(() => {
     if (!schoolId) return;
-    const fetch = async () => {
+    const fetchAnnouncements = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('announcements')
         .select('*')
         .eq('school_id', schoolId)
         .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Announcements fetch error:', error.message);
+      }
       setAnnouncements(data || []);
       setLoading(false);
     };
-    fetch();
+    fetchAnnouncements();
   }, [schoolId]);
 
   const typeBadgeColor = (type: string | null) => {

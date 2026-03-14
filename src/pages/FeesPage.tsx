@@ -34,6 +34,8 @@ const FeesPage = () => {
           .lte("created_at", endDate.toISOString())
           .order("created_at", { ascending: false }),
       ]);
+      if (byStudent.error) console.error('Fees (student) fetch error:', byStudent.error.message);
+      if (byClass.error) console.error('Fees (class) fetch error:', byClass.error.message);
       const allFees = [...(byStudent.data || []), ...(byClass.data || [])];
       const uniqueFees = Array.from(new Map(allFees.map((f) => [f.id, f])).values());
       setFees(uniqueFees);
