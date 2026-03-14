@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface StudentData {
@@ -28,7 +28,6 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, restore from localStorage
   useEffect(() => {
     const savedStudentId = localStorage.getItem(LINKED_STUDENT_KEY);
     const savedSchoolId = localStorage.getItem(LINKED_SCHOOL_KEY);
@@ -59,17 +58,44 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const rollNoInt = parseInt(rollNo, 10);
     if (isNaN(rollNoInt)) throw new Error("Roll number must be a valid number");
 
+    // Secret ID se student dhundo — roll_no aur failed_attempts bhi fetch karo
     const { data, error } = await supabase
       .from("students")
-      .select("id, name, standard, section, avatar_url, school_id")
+      .select("id, name, standard, section, avatar_url, school_id, roll_no, failed_attempts")
       .eq("secret_id", secretId.trim())
-      .eq("roll_no", rollNoInt)
       .maybeSingle();
 
     if (error) throw new Error("Failed to verify credentials");
-    if (!data) throw new Error("Invalid secret key or roll number");
+    if (!data) throw new Error("Invalid Secret ID or Roll Number");
 
-    const { school_id, ...studentData } = data;
+    const currentAttempts = (data as any).failed_attempts || 0;
+
+    // 5 ya zyada attempts ho chuke — block karo, admin se milne bolo
+    if (currentAttempts >= 5) {
+      throw new Error("TOO_MANY_ATTEMPTS");
+    }
+
+    // Roll number galat hai
+    if ((data as any).roll_no !== rollNoInt) {
+      const newAttempts = currentAttempts + 1;
+      await supabase
+        .from("students")
+        .update({ failed_attempts: newAttempts } as any)
+        .eq("id", data.id);
+
+      if (newAttempts >= 5) {
+        throw new Error("TOO_MANY_ATTEMPTS");
+      }
+      throw new Error(`Invalid Secret ID or Roll Number. ${5 - newAttempts} attempts remaining.`);
+    }
+
+    // Login successful — failed_attempts reset karo
+    await supabase
+      .from("students")
+      .update({ failed_attempts: 0 } as any)
+      .eq("id", data.id);
+
+    const { school_id, roll_no, failed_attempts, ...studentData } = data as any;
     setStudent(studentData);
     setSchoolId(school_id);
     localStorage.setItem(LINKED_STUDENT_KEY, data.id);
