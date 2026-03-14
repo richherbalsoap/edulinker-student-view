@@ -44,7 +44,6 @@ const HomeworkPage = () => {
       setLoading(false);
     };
     fetchHomework();
-    fetch();
   }, [student, schoolId, startDate, endDate]);
 
   return (
