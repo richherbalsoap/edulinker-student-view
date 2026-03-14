@@ -1,55 +1,79 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { KeyRound, AlertTriangle, Hash } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useStudentAuth } from '@/context/StudentAuthContext';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { KeyRound, AlertTriangle, Hash } from "lucide-react";
+import { motion } from "framer-motion";
+import { useStudentAuth } from "@/context/StudentAuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const MAX_ATTEMPTS = 5;
+const LOCKOUT_KEY = "edu_login_lockout";
 
 const LoginPage = () => {
-  const [secretId, setSecretId] = useState('');
-  const [rollNo, setRollNo] = useState('');
+  const [secretId, setSecretId] = useState("");
+  const [rollNo, setRollNo] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [attempts, setAttempts] = useState(0);
+  const [attempts, setAttempts] = useState(() => {
+    // Check sessionStorage on mount — persists through soft refresh, clears on tab close
+    const stored = sessionStorage.getItem(LOCKOUT_KEY);
+    if (!stored) return 0;
+    const { count, ts } = JSON.parse(stored);
+    // Auto-clear lockout after 10 minutes
+    if (Date.now() - ts > 10 * 60 * 1000) {
+      sessionStorage.removeItem(LOCKOUT_KEY);
+      return 0;
+    }
+    return count;
+  });
+
   const { login, isLoggedIn } = useStudentAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate('/student-dashboard', { replace: true });
+      navigate("/student-dashboard", { replace: true });
     }
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+      document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
+      document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (attempts >= MAX_ATTEMPTS) return;
 
+    // Trim whitespace — common cause of "correct credentials failing"
+    const cleanSecretId = secretId.trim();
+    const cleanRollNo = rollNo.trim();
+
+    if (!cleanSecretId || !cleanRollNo) {
+      toast.error("Please fill in both fields.");
+      return;
+    }
+
     setSubmitting(true);
 
-    const delay = (attempts + 1) * 1000;
-    await new Promise(resolve => setTimeout(resolve, delay));
-
     try {
-      await login(secretId, rollNo);
-      toast.success('Login successful!');
-      navigate('/student-dashboard');
+      await login(cleanSecretId, cleanRollNo);
+      // On success, clear any stored lockout
+      sessionStorage.removeItem(LOCKOUT_KEY);
+      toast.success("Login successful!");
+      navigate("/student-dashboard");
     } catch (error: any) {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
 
+      // Persist attempts to sessionStorage so refresh doesn't reset it
+      sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify({ count: newAttempts, ts: Date.now() }));
+
       if (newAttempts >= MAX_ATTEMPTS) {
-        toast.error('Too many failed attempts. Please refresh and try again.');
+        toast.error("Too many failed attempts. Try again in 10 minutes.");
       } else {
         toast.error(`${error.message} (${MAX_ATTEMPTS - newAttempts} attempts remaining)`);
       }
@@ -58,6 +82,8 @@ const LoginPage = () => {
     }
   };
 
+  const isLocked = attempts >= MAX_ATTEMPTS;
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden relative">
       <div className="fixed inset-0 pointer-events-none">
@@ -65,7 +91,11 @@ const LoginPage = () => {
         <div className="absolute inset-0 tech-grid opacity-20"></div>
         <div className="absolute inset-0">
           {[10, 25, 45, 70, 85, 35, 60].map((left, i) => (
-            <div key={i} className="falling-line" style={{ left: `${left}%`, animationDuration: `${4 + i % 3 * 1.5}s`, animationDelay: `${i * 0.5}s` }} />
+            <div
+              key={i}
+              className="falling-line"
+              style={{ left: `${left}%`, animationDuration: `${4 + (i % 3) * 1.5}s`, animationDelay: `${i * 0.5}s` }}
+            />
           ))}
         </div>
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent to-transparent via-primary/10"></div>
@@ -95,16 +125,26 @@ const LoginPage = () => {
               </p>
             </div>
 
-            {attempts > 0 && attempts < MAX_ATTEMPTS && (
+            {attempts > 0 && !isLocked && (
               <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 mb-6">
                 <AlertTriangle size={16} className="text-destructive shrink-0" />
                 <span className="text-destructive text-sm">{MAX_ATTEMPTS - attempts} attempts remaining</span>
               </div>
             )}
 
+            {isLocked && (
+              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 mb-6">
+                <AlertTriangle size={16} className="text-destructive shrink-0" />
+                <span className="text-destructive text-sm">Account locked. Try again in 10 minutes.</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="secretId" className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
+                <label
+                  htmlFor="secretId"
+                  className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1"
+                >
                   <KeyRound size={12} className="inline mr-1 mb-0.5" />
                   Secret ID
                 </label>
@@ -114,24 +154,36 @@ const LoginPage = () => {
                   value={secretId}
                   onChange={(e) => setSecretId(e.target.value)}
                   required
-                  disabled={attempts >= MAX_ATTEMPTS}
+                  disabled={isLocked}
+                  autoComplete="off"
+                  spellCheck={false}
                   className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 font-mono tracking-wider text-center text-lg disabled:opacity-50"
                   placeholder="EDU-XXXX-XXXXX"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="rollNo" className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
+                <label
+                  htmlFor="rollNo"
+                  className="block text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1"
+                >
                   <Hash size={12} className="inline mr-1 mb-0.5" />
                   Roll Number
                 </label>
                 <input
                   id="rollNo"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={rollNo}
-                  onChange={(e) => setRollNo(e.target.value)}
+                  onChange={(e) => {
+                    // Only allow digits
+                    const val = e.target.value.replace(/\D/g, "");
+                    setRollNo(val);
+                  }}
                   required
-                  disabled={attempts >= MAX_ATTEMPTS}
+                  disabled={isLocked}
+                  autoComplete="off"
                   className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 text-center text-lg disabled:opacity-50"
                   placeholder="Enter your roll number"
                 />
@@ -139,16 +191,18 @@ const LoginPage = () => {
 
               <Button
                 type="submit"
-                disabled={submitting || attempts >= MAX_ATTEMPTS || !secretId || !rollNo}
+                disabled={submitting || isLocked || !secretId.trim() || !rollNo.trim()}
                 className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-2xl transition-all duration-300 transform active:scale-[0.98] shadow-[0_0_20px_hsl(51,100%,50%,0.3)] hover:shadow-[0_0_30px_hsl(51,100%,50%,0.5)]"
               >
                 <KeyRound size={20} className="mr-2" />
-                {submitting ? 'Verifying...' : 'Sign In'}
+                {submitting ? "Verifying..." : "Sign In"}
               </Button>
             </form>
 
             <div className="mt-10 text-center">
-              <p className="text-[10px] text-muted-foreground/40 uppercase tracking-widest font-semibold">Contact your school admin if you don't have a Secret ID</p>
+              <p className="text-[10px] text-muted-foreground/40 uppercase tracking-widest font-semibold">
+                Contact your school admin if you don't have a Secret ID
+              </p>
             </div>
           </div>
         </motion.div>
