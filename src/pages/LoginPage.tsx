@@ -1,31 +1,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { KeyRound, AlertTriangle, Hash } from "lucide-react";
+import { KeyRound, AlertTriangle, Hash, RefreshCw, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_KEY = "edu_login_lockout";
-
 const LoginPage = () => {
   const [secretId, setSecretId] = useState("");
   const [rollNo, setRollNo] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [attempts, setAttempts] = useState(() => {
-    // Check sessionStorage on mount — persists through soft refresh, clears on tab close
-    const stored = sessionStorage.getItem(LOCKOUT_KEY);
-    if (!stored) return 0;
-    const { count, ts } = JSON.parse(stored);
-    // Auto-clear lockout after 10 minutes
-    if (Date.now() - ts > 10 * 60 * 1000) {
-      sessionStorage.removeItem(LOCKOUT_KEY);
-      return 0;
-    }
-    return count;
-  });
-
+  const [attempts, setAttempts] = useState(0);
+  const [lockedOut, setLockedOut] = useState(false);
   const { login, isLoggedIn } = useStudentAuth();
   const navigate = useNavigate();
 
@@ -46,43 +32,88 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (attempts >= MAX_ATTEMPTS) return;
+    if (lockedOut) return;
 
-    // Trim whitespace — common cause of "correct credentials failing"
     const cleanSecretId = secretId.trim();
     const cleanRollNo = rollNo.trim();
-
-    if (!cleanSecretId || !cleanRollNo) {
-      toast.error("Please fill in both fields.");
-      return;
-    }
+    if (!cleanSecretId || !cleanRollNo) return;
 
     setSubmitting(true);
-
     try {
       await login(cleanSecretId, cleanRollNo);
-      // On success, clear any stored lockout
-      sessionStorage.removeItem(LOCKOUT_KEY);
       toast.success("Login successful!");
       navigate("/student-dashboard");
     } catch (error: any) {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-
-      // Persist attempts to sessionStorage so refresh doesn't reset it
-      sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify({ count: newAttempts, ts: Date.now() }));
-
-      if (newAttempts >= MAX_ATTEMPTS) {
-        toast.error("Too many failed attempts. Try again in 10 minutes.");
+      if (error.message === "TOO_MANY_ATTEMPTS") {
+        setLockedOut(true);
       } else {
-        toast.error(`${error.message} (${MAX_ATTEMPTS - newAttempts} attempts remaining)`);
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+        toast.error(error.message);
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const isLocked = attempts >= MAX_ATTEMPTS;
+  // Lockout screen — refresh karo
+  if (lockedOut) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden relative">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="spotlight-bg"></div>
+          <div className="absolute inset-0 tech-grid opacity-20"></div>
+          <div className="horizon-ring"></div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60vw] h-[200px] bg-primary/5 blur-[100px] rounded-full"></div>
+        </div>
+        <div className="relative w-full max-w-md z-20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="bg-card/40 backdrop-blur-[40px] border border-destructive/20 rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden ring-1 ring-destructive/10"
+          >
+            <div className="relative p-10 sm:p-12 text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="w-20 h-20 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+                  <ShieldAlert size={36} className="text-destructive" />
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Too Many Attempts</h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  You've entered incorrect credentials 5 times. Please contact your{" "}
+                  <span className="text-primary font-semibold">Principal or Admin</span> to reset your access.
+                </p>
+              </div>
+
+              {/* Same style as fee card in student management */}
+              <div className="bg-destructive/5 border border-destructive/15 rounded-xl p-4 text-left space-y-1">
+                <div className="flex items-center gap-2 text-destructive/70 text-xs font-bold mb-2">
+                  <AlertTriangle size={13} /> ACCOUNT LOCKED
+                </div>
+                <p className="text-xs text-foreground/60">
+                  Secret ID and Roll Number are available from your school admin.
+                </p>
+                <p className="text-xs text-foreground/40">
+                  Ask your Principal to reset your login attempts from the Student Management panel.
+                </p>
+              </div>
+
+              <Button
+                onClick={() => window.location.reload()}
+                className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-2xl"
+              >
+                <RefreshCw size={16} className="mr-2" />
+                Refresh & Try Again
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden relative">
@@ -125,17 +156,10 @@ const LoginPage = () => {
               </p>
             </div>
 
-            {attempts > 0 && !isLocked && (
+            {attempts > 0 && (
               <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 mb-6">
                 <AlertTriangle size={16} className="text-destructive shrink-0" />
-                <span className="text-destructive text-sm">{MAX_ATTEMPTS - attempts} attempts remaining</span>
-              </div>
-            )}
-
-            {isLocked && (
-              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 mb-6">
-                <AlertTriangle size={16} className="text-destructive shrink-0" />
-                <span className="text-destructive text-sm">Account locked. Try again in 10 minutes.</span>
+                <span className="text-destructive text-sm">{5 - attempts} attempts remaining</span>
               </div>
             )}
 
@@ -154,10 +178,9 @@ const LoginPage = () => {
                   value={secretId}
                   onChange={(e) => setSecretId(e.target.value)}
                   required
-                  disabled={isLocked}
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 font-mono tracking-wider text-center text-lg disabled:opacity-50"
+                  className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 font-mono tracking-wider text-center text-lg"
                   placeholder="EDU-XXXX-XXXXX"
                 />
               </div>
@@ -176,22 +199,17 @@ const LoginPage = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={rollNo}
-                  onChange={(e) => {
-                    // Only allow digits
-                    const val = e.target.value.replace(/\D/g, "");
-                    setRollNo(val);
-                  }}
+                  onChange={(e) => setRollNo(e.target.value.replace(/\D/g, ""))}
                   required
-                  disabled={isLocked}
                   autoComplete="off"
-                  className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 text-center text-lg disabled:opacity-50"
+                  className="w-full px-5 py-4 bg-background/20 border border-primary/10 rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-500 hover:bg-background/30 text-center text-lg"
                   placeholder="Enter your roll number"
                 />
               </div>
 
               <Button
                 type="submit"
-                disabled={submitting || isLocked || !secretId.trim() || !rollNo.trim()}
+                disabled={submitting || !secretId.trim() || !rollNo.trim()}
                 className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-2xl transition-all duration-300 transform active:scale-[0.98] shadow-[0_0_20px_hsl(51,100%,50%,0.3)] hover:shadow-[0_0_30px_hsl(51,100%,50%,0.5)]"
               >
                 <KeyRound size={20} className="mr-2" />
