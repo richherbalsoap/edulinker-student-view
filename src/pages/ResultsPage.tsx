@@ -28,9 +28,9 @@ const ResultsPage = () => {
 
   useEffect(() => {
     if (!student || !schoolId) return;
-    const fetch = async () => {
+    const fetchResults = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("results")
         .select("*")
         .eq("student_id", student.id)
@@ -38,10 +38,13 @@ const ResultsPage = () => {
         .gte("created_at", startDate.toISOString())
         .lte("created_at", endDate.toISOString())
         .order("created_at", { ascending: false });
+      if (error) {
+        console.error('Results fetch error:', error.message);
+      }
       setResults(data || []);
       setLoading(false);
     };
-    fetch();
+    fetchResults();
   }, [student, schoolId, startDate, endDate]);
 
   return (

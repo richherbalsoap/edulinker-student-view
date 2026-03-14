@@ -16,16 +16,17 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!student || !schoolId) return;
     const fetchData = async () => {
-      const { data: res } = await supabase
+      const { data: res, error: resErr } = await supabase
         .from('results')
         .select('*')
         .eq('student_id', student.id)
         .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
+      if (resErr) console.error('Dashboard results error:', resErr.message);
       setResults(res || []);
 
-      const { data: hw, count } = await supabase
+      const { data: hw, count, error: hwErr } = await supabase
         .from('homework')
         .select('*', { count: 'exact' })
         .ilike('standard', student.standard)
@@ -33,16 +34,18 @@ const StudentDashboard = () => {
         .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
+      if (hwErr) console.error('Dashboard homework error:', hwErr.message);
       setHomework(hw || []);
       setHomeworkCount(count || 0);
 
-      const { data: comp } = await supabase
+      const { data: comp, error: compErr } = await supabase
         .from('complaints')
         .select('*')
         .eq('student_id', student.id)
         .eq('school_id', schoolId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
+      if (compErr) console.error('Dashboard complaints error:', compErr.message);
       setComplaints(comp || []);
     };
     fetchData();

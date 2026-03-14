@@ -28,9 +28,9 @@ const ComplaintsPage = () => {
 
   useEffect(() => {
     if (!student || !schoolId) return;
-    const fetch = async () => {
+    const fetchComplaints = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('complaints')
         .select('*')
         .eq('student_id', student.id)
@@ -38,10 +38,13 @@ const ComplaintsPage = () => {
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Complaints fetch error:', error.message);
+      }
       setComplaints(data || []);
       setLoading(false);
     };
-    fetch();
+    fetchComplaints();
   }, [student, schoolId, startDate, endDate]);
 
   return (
