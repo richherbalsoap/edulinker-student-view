@@ -26,6 +26,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <PWAInstallBanner />
       <BrowserRouter>
         <StudentAuthProvider>
           <AcademicYearProvider>
