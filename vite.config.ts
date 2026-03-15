@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
       },
       manifest: {
-        name: "EDULinker Student Portal",
+        name: "EDULinker Student View App",
         short_name: "EDULinker",
         description: "EDULinker Student View App - Access homework, results, fees & more",
         theme_color: "#0a0a0a",
