@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { requestNotificationPermission } from "@/firebase";
 
 interface StudentData {
   id: string;
@@ -100,6 +101,19 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setSchoolId(school_id);
     localStorage.setItem(LINKED_STUDENT_KEY, data.id);
     localStorage.setItem(LINKED_SCHOOL_KEY, school_id);
+
+    // FCM token save karo Supabase mein
+    try {
+      const fcmToken = await requestNotificationPermission();
+      if (fcmToken) {
+        await supabase.from("fcm_tokens").upsert({
+          student_id: data.id,
+          token: fcmToken,
+        });
+      }
+    } catch (err) {
+      console.error("FCM token save failed:", err);
+    }
   };
 
   const logout = () => {
