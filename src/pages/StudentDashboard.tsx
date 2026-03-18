@@ -6,7 +6,7 @@ import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar } from 'lucid
 
 const StudentDashboard = () => {
   const { student, schoolId } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [results, setResults] = useState<any[]>([]);
   const [homework, setHomework] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);

@@ -6,7 +6,7 @@ import { IndianRupee } from "lucide-react";
 
 const FeesPage = () => {
   const { student, schoolId } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [fees, setFees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -20,7 +20,7 @@ const isImageFile = (filePath: string) => {
 
 const ResultsPage = () => {
   const { student } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
