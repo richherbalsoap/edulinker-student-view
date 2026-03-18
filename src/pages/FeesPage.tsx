@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
-import { useAcademicYear } from "@/context/AcademicYearContext";
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from "@/integrations/supabase/client";
 import { IndianRupee } from "lucide-react";
 
 const FeesPage = () => {
   const { student, schoolId } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [fees, setFees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

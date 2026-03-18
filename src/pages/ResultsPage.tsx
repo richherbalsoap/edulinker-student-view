@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
-import { useAcademicYear } from "@/context/AcademicYearContext";
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, ExternalLink } from "lucide-react";
 
@@ -20,7 +20,7 @@ const isImageFile = (filePath: string) => {
 
 const ResultsPage = () => {
   const { student } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
