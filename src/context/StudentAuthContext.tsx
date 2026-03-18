@@ -30,29 +30,10 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedStudentId = localStorage.getItem(LINKED_STUDENT_KEY);
-    const savedSchoolId = localStorage.getItem(LINKED_SCHOOL_KEY);
-    if (savedStudentId && savedSchoolId) {
-      setSchoolId(savedSchoolId);
-      supabase
-        .from("students")
-        .select("id, name, standard, section, avatar_url")
-        .eq("id", savedStudentId)
-        .eq("school_id", savedSchoolId)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) {
-            setStudent(data);
-          } else {
-            localStorage.removeItem(LINKED_STUDENT_KEY);
-            localStorage.removeItem(LINKED_SCHOOL_KEY);
-            setSchoolId(null);
-          }
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    // Always start fresh — no auto-login from localStorage
+    localStorage.removeItem(LINKED_STUDENT_KEY);
+    localStorage.removeItem(LINKED_SCHOOL_KEY);
+    setLoading(false);
   }, []);
 
   const login = async (secretId: string, rollNo: string) => {
