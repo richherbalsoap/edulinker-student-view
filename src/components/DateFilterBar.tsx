@@ -19,7 +19,7 @@ const DateFilterBar = () => {
   } = useDateFilter();
 
   return (
-    <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-primary/10 px-4 py-2.5">
+    <div className="bg-background/80 backdrop-blur-md border-b border-primary/10 px-4 py-2.5">
       <div className="flex items-center gap-2 flex-wrap">
         <CalendarDays size={16} className="text-primary shrink-0" />
         

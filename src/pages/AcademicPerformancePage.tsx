@@ -1,15 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
-import { useAcademicYear } from '@/context/AcademicYearContext';
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, Award, BookOpen, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const COLORS = ['#3b82f6', '#22c55e', '#a855f7', '#eab308', '#ec4899', '#06b6d4', '#ef4444', '#6366f1'];
 
 const AcademicPerformancePage = () => {
   const { student } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,6 +58,11 @@ const AcademicPerformancePage = () => {
     return subjectPerformance.reduce((best, s) => s.avgScore > best.avgScore ? s : best).subject;
   }, [subjectPerformance]);
 
+  const weakSubject = useMemo(() => {
+    if (subjectPerformance.length === 0) return '--';
+    return subjectPerformance.reduce((worst, s) => s.avgScore < worst.avgScore ? s : worst).subject;
+  }, [subjectPerformance]);
+
   // Trend chart data: group results by date, each subject as a series
   const trendData = useMemo(() => {
     const subjects = [...new Set(results.map(r => r.subject))];
@@ -74,6 +79,7 @@ const AcademicPerformancePage = () => {
     { icon: TrendingUp, label: 'Overall Average', value: results.length ? `${overallAvg}%` : '--' },
     { icon: BookOpen, label: 'Total Subjects', value: subjectPerformance.length },
     { icon: Award, label: 'Best Subject', value: bestSubject },
+    { icon: TrendingDown, label: 'Weak Subject', value: weakSubject },
     { icon: BarChart3, label: 'Results Count', value: results.length },
   ];
 
