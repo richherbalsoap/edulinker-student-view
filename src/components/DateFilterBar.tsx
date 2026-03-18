@@ -40,19 +40,19 @@ const DateFilterBar = () => {
         </div>
 
         {filterType === 'custom' && (
-          <div className="flex items-center gap-2 ml-1">
+          <div className="flex items-center gap-2 w-full mt-1.5">
             <input
               type="date"
               value={customStartDate ? format(customStartDate, 'yyyy-MM-dd') : ''}
               onChange={e => setCustomStartDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
-              className="px-2 py-1 rounded-lg text-xs bg-card/30 border border-primary/20 text-foreground outline-none focus:border-primary/50"
+              className="flex-1 px-3 py-1.5 rounded-full text-xs bg-card border border-primary/30 text-foreground outline-none focus:border-primary/60"
             />
-            <span className="text-foreground/40 text-xs">to</span>
+            <span className="text-foreground/40 text-xs shrink-0">to</span>
             <input
               type="date"
               value={customEndDate ? format(customEndDate, 'yyyy-MM-dd') : ''}
               onChange={e => setCustomEndDate(e.target.value ? new Date(e.target.value + 'T23:59:59') : undefined)}
-              className="px-2 py-1 rounded-lg text-xs bg-card/30 border border-primary/20 text-foreground outline-none focus:border-primary/50"
+              className="flex-1 px-3 py-1.5 rounded-full text-xs bg-card border border-primary/30 text-foreground outline-none focus:border-primary/60"
             />
           </div>
         )}
