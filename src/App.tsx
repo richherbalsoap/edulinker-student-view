@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StudentAuthProvider } from "@/context/StudentAuthContext";
 import { AcademicYearProvider } from "@/context/AcademicYearContext";
+import { DateFilterProvider } from "@/context/DateFilterContext";
 import LoginPage from "./pages/LoginPage";
 import StudentLayout from "./components/StudentLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
