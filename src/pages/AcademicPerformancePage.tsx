@@ -58,6 +58,11 @@ const AcademicPerformancePage = () => {
     return subjectPerformance.reduce((best, s) => s.avgScore > best.avgScore ? s : best).subject;
   }, [subjectPerformance]);
 
+  const weakSubject = useMemo(() => {
+    if (subjectPerformance.length === 0) return '--';
+    return subjectPerformance.reduce((worst, s) => s.avgScore < worst.avgScore ? s : worst).subject;
+  }, [subjectPerformance]);
+
   // Trend chart data: group results by date, each subject as a series
   const trendData = useMemo(() => {
     const subjects = [...new Set(results.map(r => r.subject))];
