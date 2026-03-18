@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, Award, BookOpen, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const COLORS = ['#3b82f6', '#22c55e', '#a855f7', '#eab308', '#ec4899', '#06b6d4', '#ef4444', '#6366f1'];
