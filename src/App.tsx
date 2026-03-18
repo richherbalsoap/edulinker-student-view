@@ -31,6 +31,7 @@ const App = () => (
       <BrowserRouter>
         <StudentAuthProvider>
           <AcademicYearProvider>
+          <DateFilterProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route
