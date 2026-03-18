@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
-import { useAcademicYear } from "@/context/AcademicYearContext";
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from "@/integrations/supabase/client";
 import { IndianRupee } from "lucide-react";
 
