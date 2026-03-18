@@ -79,6 +79,7 @@ const AcademicPerformancePage = () => {
     { icon: TrendingUp, label: 'Overall Average', value: results.length ? `${overallAvg}%` : '--' },
     { icon: BookOpen, label: 'Total Subjects', value: subjectPerformance.length },
     { icon: Award, label: 'Best Subject', value: bestSubject },
+    { icon: TrendingDown, label: 'Weak Subject', value: weakSubject },
     { icon: BarChart3, label: 'Results Count', value: results.length },
   ];
 
