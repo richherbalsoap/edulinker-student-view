@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
-import { useAcademicYear } from '@/context/AcademicYearContext';
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
