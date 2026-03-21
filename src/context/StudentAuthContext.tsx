@@ -40,35 +40,38 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const rollNoInt = parseInt(rollNo, 10);
     if (isNaN(rollNoInt)) throw new Error("Roll number must be a valid number");
 
-    // Secret ID se student dhundo — roll_no aur failed_attempts bhi fetch karo
-    const { data, error } = await supabase
+    // Saare students fetch karo same secret_id se (multiple schools ho sakti hain)
+    const { data: rows, error } = await supabase
       .from("students")
       .select("id, name, standard, section, avatar_url, school_id, roll_no, failed_attempts")
-      .eq("secret_id", secretId.trim())
-      .maybeSingle();
+      .eq("secret_id", secretId.trim());
 
     if (error) throw new Error("Failed to verify credentials");
-    if (!data) throw new Error("Invalid Secret ID or Roll Number");
+    if (!rows || rows.length === 0) throw new Error("Invalid Secret ID or Roll Number");
 
-    const currentAttempts = (data as any).failed_attempts || 0;
+    // Roll no se exact match dhundo — yeh school identify karega automatically
+    const data = (rows as any[]).find((r) => r.roll_no === rollNoInt) ?? null;
 
-    // 5 ya zyada attempts ho chuke — block karo, admin se milne bolo
-    if (currentAttempts >= 5) {
-      throw new Error("TOO_MANY_ATTEMPTS");
-    }
-
-    // Roll number galat hai
-    if ((data as any).roll_no !== rollNoInt) {
+    if (!data) {
+      // Secret ID sahi hai but roll_no match nahi — pehli row pe attempts track karo
+      const firstRow = rows[0] as any;
+      const currentAttempts = firstRow.failed_attempts || 0;
       const newAttempts = currentAttempts + 1;
+
       await supabase
         .from("students")
         .update({ failed_attempts: newAttempts } as any)
-        .eq("id", data.id);
+        .eq("id", firstRow.id);
 
-      if (newAttempts >= 5) {
-        throw new Error("TOO_MANY_ATTEMPTS");
-      }
+      if (newAttempts >= 5) throw new Error("TOO_MANY_ATTEMPTS");
       throw new Error(`Invalid Secret ID or Roll Number. ${5 - newAttempts} attempts remaining.`);
+    }
+
+    const currentAttempts = (data as any).failed_attempts || 0;
+
+    // 5 ya zyada attempts — block karo
+    if (currentAttempts >= 5) {
+      throw new Error("TOO_MANY_ATTEMPTS");
     }
 
     // Login successful — failed_attempts reset karo
