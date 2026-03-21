@@ -30,7 +30,6 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Always start fresh — no auto-login from localStorage
     localStorage.removeItem(LINKED_STUDENT_KEY);
     localStorage.removeItem(LINKED_SCHOOL_KEY);
     setLoading(false);
@@ -46,7 +45,7 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .select("id, name, standard, section, avatar_url, school_id, roll_no, failed_attempts")
       .eq("secret_id", secretId.trim());
 
-    if (error) throw new Error("Failed to verify credentials");
+    if (error) throw new Error("Invalid Secret ID or Roll Number");
     if (!rows || rows.length === 0) throw new Error("Invalid Secret ID or Roll Number");
 
     // Roll no se exact match dhundo — yeh school identify karega automatically
@@ -69,7 +68,6 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const currentAttempts = (data as any).failed_attempts || 0;
 
-    // 5 ya zyada attempts — block karo
     if (currentAttempts >= 5) {
       throw new Error("TOO_MANY_ATTEMPTS");
     }
@@ -86,18 +84,19 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     localStorage.setItem(LINKED_STUDENT_KEY, data.id);
     localStorage.setItem(LINKED_SCHOOL_KEY, school_id);
 
-    // FCM token save karo Supabase mein
-    try {
-      const fcmToken = await requestNotificationPermission();
-      if (fcmToken) {
-        await supabase.from("fcm_tokens").upsert({
-          student_id: data.id,
-          token: fcmToken,
-        });
-      }
-    } catch (err) {
-      console.error("FCM token save failed:", err);
-    }
+    // FCM token — login se bilkul alag, agar fail ho toh login block nahi hoga
+    requestNotificationPermission()
+      .then(async (fcmToken) => {
+        if (fcmToken) {
+          await supabase.from("fcm_tokens").upsert({
+            student_id: data.id,
+            token: fcmToken,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("FCM token save failed:", err);
+      });
   };
 
   const logout = () => {
