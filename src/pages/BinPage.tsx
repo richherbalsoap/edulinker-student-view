@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDeletedItems, DeletedItemType } from '@/context/DeletedItemsContext';
+import { useDateFilter } from '@/context/DateFilterContext';
 import { Trash2, RotateCcw, AlertTriangle, Lock, BookOpen, FileText, MessageSquare, Bell } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -25,6 +26,12 @@ const BinPage = () => {
   const [isSettingPin, setIsSettingPin] = useState(!binPin);
   const [filter, setFilter] = useState<'all' | DeletedItemType>('all');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const { filterStartDate, filterEndDate } = useDateFilter();
+
+  // Auto-lock when leaving the page
+  useEffect(() => {
+    return () => { lockBin(); };
+  }, []);
 
   const handlePinSubmit = () => {
     if (pinInput.length !== 4 || !/^\d{4}$/.test(pinInput)) {
@@ -79,7 +86,11 @@ const BinPage = () => {
     );
   }
 
-  const filtered = filter === 'all' ? deletedItems : deletedItems.filter(i => i.type === filter);
+  const typeFiltered = filter === 'all' ? deletedItems : deletedItems.filter(i => i.type === filter);
+  const filtered = typeFiltered.filter(item => {
+    const deletedDate = new Date(item.deleted_at);
+    return deletedDate >= filterStartDate && deletedDate <= filterEndDate;
+  });
   const daysLeft = (deletedAt: string) => Math.max(0, 30 - Math.floor((Date.now() - new Date(deletedAt).getTime()) / (1000 * 60 * 60 * 24)));
 
   return (
