@@ -91,6 +91,7 @@ const BinPage = () => {
     const deletedDate = new Date(item.deleted_at);
     return deletedDate >= filterStartDate && deletedDate <= filterEndDate;
   });
+  const daysLeft = (deletedAt: string) => Math.max(0, 30 - Math.floor((Date.now() - new Date(deletedAt).getTime()) / (1000 * 60 * 60 * 24)));
 
   return (
     <div className="space-y-6 relative z-10 px-4 py-6">
