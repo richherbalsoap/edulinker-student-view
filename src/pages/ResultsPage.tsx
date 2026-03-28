@@ -3,6 +3,8 @@ import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useDateFilter } from "@/context/DateFilterContext";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, ExternalLink } from "lucide-react";
+import DeleteButton from '@/components/DeleteButton';
+import { useDeletedItems } from '@/context/DeletedItemsContext';
 
 const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
 
@@ -25,6 +27,7 @@ const ResultsPage = () => {
   const [loading, setLoading] = useState(true);
 
   const { schoolId } = useStudentAuth();
+  const { isDeleted } = useDeletedItems();
 
   useEffect(() => {
     if (!student || !schoolId) return;
@@ -74,7 +77,7 @@ const ResultsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {results.map((r) => {
+                {results.filter(r => !isDeleted(r.id)).map((r) => {
                   const fileUrl = r.file_url ? getFilePublicUrl(r.file_url) : null;
                   const isImage = r.file_url ? isImageFile(r.file_url) : false;
                   return (
@@ -110,6 +113,7 @@ const ResultsPage = () => {
                         ) : (
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
+                        <DeleteButton id={r.id} type="results" data={r} />
                       </td>
                     </tr>
                   );

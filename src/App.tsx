@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StudentAuthProvider } from "@/context/StudentAuthContext";
 import { AcademicYearProvider } from "@/context/AcademicYearContext";
 import { DateFilterProvider } from "@/context/DateFilterContext";
+import { DeletedItemsProvider } from "@/context/DeletedItemsContext";
 import LoginPage from "./pages/LoginPage";
 import StudentLayout from "./components/StudentLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -18,6 +19,7 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AcademicPerformancePage from "./pages/AcademicPerformancePage";
 import AIInsightPage from "./pages/AIInsightPage";
 import FeesPage from "./pages/FeesPage";
+import BinPage from "./pages/BinPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,7 @@ const App = () => (
         <StudentAuthProvider>
           <AcademicYearProvider>
           <DateFilterProvider>
+          <DeletedItemsProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route
@@ -49,10 +52,12 @@ const App = () => (
                 <Route path="/academic-performance" element={<AcademicPerformancePage />} />
                 <Route path="/ai-insight" element={<AIInsightPage />} />
                 <Route path="/fees" element={<FeesPage />} />
+                <Route path="/bin" element={<BinPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+          </DeletedItemsProvider>
           </DateFilterProvider>
           </AcademicYearProvider>
         </StudentAuthProvider>
