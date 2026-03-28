@@ -23,6 +23,7 @@ const isImageFile = (filePath: string) => {
 const HomeworkPage = () => {
   const { student, schoolId } = useStudentAuth();
   const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { isDeleted } = useDeletedItems();
   const [homework, setHomework] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +75,7 @@ const HomeworkPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {homework.map(hw => {
+                {homework.filter(hw => !isDeleted(hw.id)).map(hw => {
                   const fileUrl = hw.file_url ? getFilePublicUrl(hw.file_url) : null;
                   const isImage = hw.file_url ? isImageFile(hw.file_url) : false;
                   return (
