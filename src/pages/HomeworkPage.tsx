@@ -3,6 +3,8 @@ import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
 import { BookOpen, ExternalLink, Image } from 'lucide-react';
+import DeleteButton from '@/components/DeleteButton';
+import { useDeletedItems } from '@/context/DeletedItemsContext';
 
 const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
 
@@ -82,7 +84,7 @@ const HomeworkPage = () => {
                       <td className="px-2 sm:px-6 py-4 text-foreground/80 text-center text-xs sm:text-sm">
                         {new Date(hw.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-center">
+                      <td className="px-2 sm:px-6 py-4 text-center flex items-center justify-center gap-2">
                         {fileUrl && isImage ? (
                           <a href={fileUrl} target="_blank" rel="noopener noreferrer">
                             <img src={fileUrl} alt={`${hw.subject} homework`} className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-lg border border-primary/10 mx-auto" />
@@ -94,6 +96,7 @@ const HomeworkPage = () => {
                         ) : (
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
+                        <DeleteButton id={hw.id} type="homework" data={hw} />
                       </td>
                     </tr>
                   );
