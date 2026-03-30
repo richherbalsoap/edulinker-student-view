@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
+import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, TrendingDown, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -14,6 +15,7 @@ const AcademicPerformancePage = () => {
   const [loading, setLoading] = useState(true);
 
   const { schoolId } = useStudentAuth();
+  const { isDeleted } = useDeletedItems();
 
   useEffect(() => {
     if (!student || !schoolId) return;
@@ -33,9 +35,12 @@ const AcademicPerformancePage = () => {
     fetch();
   }, [student, schoolId, startDate, endDate]);
 
+  // Filter out deleted results
+  const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);
+
   const subjectPerformance = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    results.forEach(r => {
+    activeResults.forEach(r => {
       if (!map[r.subject]) map[r.subject] = { total: 0, count: 0 };
       map[r.subject].total += r.percentage || 0;
       map[r.subject].count += 1;
@@ -46,7 +51,7 @@ const AcademicPerformancePage = () => {
       avgScore: Math.round(data.total / data.count),
       color: colors[i % colors.length],
     }));
-  }, [results]);
+  }, [activeResults]);
 
   const overallAvg = useMemo(() => {
     if (subjectPerformance.length === 0) return 0;
@@ -65,25 +70,25 @@ const AcademicPerformancePage = () => {
 
   // Trend chart data: group results by date, each subject as a series
   const trendData = useMemo(() => {
-    const subjects = [...new Set(results.map(r => r.subject))];
+    const subjects = [...new Set(activeResults.map(r => r.subject))];
     const dateMap: Record<string, any> = {};
-    results.forEach(r => {
+    activeResults.forEach(r => {
       const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       if (!dateMap[date]) dateMap[date] = { date };
       dateMap[date][r.subject] = r.percentage;
     });
     return { data: Object.values(dateMap), subjects };
-  }, [results]);
+  }, [activeResults]);
 
   const statCards = [
-    { icon: TrendingUp, label: 'Overall Average', value: results.length ? `${overallAvg}%` : '--' },
+    { icon: TrendingUp, label: 'Overall Average', value: activeResults.length ? `${overallAvg}%` : '--' },
     { icon: BookOpen, label: 'Total Subjects', value: subjectPerformance.length },
     { icon: Award, label: 'Best Subject', value: bestSubject },
     { icon: TrendingDown, label: 'Weak Subject', value: weakSubject },
-    { icon: BarChart3, label: 'Results Count', value: results.length },
+    { icon: BarChart3, label: 'Results Count', value: activeResults.length },
   ];
 
-  const hasData = results.length > 0;
+  const hasData = activeResults.length > 0;
 
   return (
     <div className="space-y-6 relative z-10 px-4 py-6">
