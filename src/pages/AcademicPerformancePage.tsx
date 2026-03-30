@@ -15,6 +15,7 @@ const AcademicPerformancePage = () => {
   const [loading, setLoading] = useState(true);
 
   const { schoolId } = useStudentAuth();
+  const { isDeleted } = useDeletedItems();
 
   useEffect(() => {
     if (!student || !schoolId) return;
