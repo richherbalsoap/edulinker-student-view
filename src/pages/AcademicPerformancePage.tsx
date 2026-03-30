@@ -35,9 +35,12 @@ const AcademicPerformancePage = () => {
     fetch();
   }, [student, schoolId, startDate, endDate]);
 
+  // Filter out deleted results
+  const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);
+
   const subjectPerformance = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
-    results.forEach(r => {
+    activeResults.forEach(r => {
       if (!map[r.subject]) map[r.subject] = { total: 0, count: 0 };
       map[r.subject].total += r.percentage || 0;
       map[r.subject].count += 1;
@@ -48,7 +51,7 @@ const AcademicPerformancePage = () => {
       avgScore: Math.round(data.total / data.count),
       color: colors[i % colors.length],
     }));
-  }, [results]);
+  }, [activeResults]);
 
   const overallAvg = useMemo(() => {
     if (subjectPerformance.length === 0) return 0;
