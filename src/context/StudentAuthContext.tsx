@@ -29,10 +29,59 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore session from localStorage on refresh
   useEffect(() => {
-    localStorage.removeItem(LINKED_STUDENT_KEY);
-    localStorage.removeItem(LINKED_SCHOOL_KEY);
-    setLoading(false);
+    const savedStudentId = localStorage.getItem(LINKED_STUDENT_KEY);
+    const savedSchoolId = localStorage.getItem(LINKED_SCHOOL_KEY);
+    if (savedStudentId && savedSchoolId) {
+      // Fetch student data from Supabase to restore session
+      supabase
+        .from("students")
+        .select("id, name, standard, section, avatar_url")
+        .eq("id", savedStudentId)
+        .single()
+        .then(({ data, error }) => {
+          if (data && !error) {
+            setStudent(data);
+            setSchoolId(savedSchoolId);
+          } else {
+            localStorage.removeItem(LINKED_STUDENT_KEY);
+            localStorage.removeItem(LINKED_SCHOOL_KEY);
+          }
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  // Clear session only when app/tab is fully closed (not on refresh)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // Use sessionStorage flag to detect actual close vs refresh
+        sessionStorage.setItem('edulinker_active', 'true');
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // Mark that we're unloading - sessionStorage persists on refresh but clears on tab close
+      sessionStorage.setItem('edulinker_active', 'true');
+    };
+
+    // On mount: if sessionStorage flag is missing, it means app was closed & reopened
+    if (!sessionStorage.getItem('edulinker_active')) {
+      localStorage.removeItem(LINKED_STUDENT_KEY);
+      localStorage.removeItem(LINKED_SCHOOL_KEY);
+    }
+    sessionStorage.setItem('edulinker_active', 'true');
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   const login = async (secretId: string, rollNo: string) => {
