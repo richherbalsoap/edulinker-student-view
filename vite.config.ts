@@ -18,10 +18,17 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: "auto",
+      devOptions: {
+        enabled: true,
+      },
       includeAssets: ["favicon.ico", "robots.txt"],
       workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
+        skipWaiting: true,
       },
       manifest: {
         name: "EDULinker Student View App",
