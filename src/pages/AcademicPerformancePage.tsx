@@ -70,15 +70,15 @@ const AcademicPerformancePage = () => {
 
   // Trend chart data: group results by date, each subject as a series
   const trendData = useMemo(() => {
-    const subjects = [...new Set(results.map(r => r.subject))];
+    const subjects = [...new Set(activeResults.map(r => r.subject))];
     const dateMap: Record<string, any> = {};
-    results.forEach(r => {
+    activeResults.forEach(r => {
       const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       if (!dateMap[date]) dateMap[date] = { date };
       dateMap[date][r.subject] = r.percentage;
     });
     return { data: Object.values(dateMap), subjects };
-  }, [results]);
+  }, [activeResults]);
 
   const statCards = [
     { icon: TrendingUp, label: 'Overall Average', value: results.length ? `${overallAvg}%` : '--' },
