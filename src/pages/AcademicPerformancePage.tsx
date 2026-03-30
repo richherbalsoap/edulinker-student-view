@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
+import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, TrendingDown, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
