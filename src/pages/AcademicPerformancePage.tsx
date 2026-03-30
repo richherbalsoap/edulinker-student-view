@@ -81,14 +81,14 @@ const AcademicPerformancePage = () => {
   }, [activeResults]);
 
   const statCards = [
-    { icon: TrendingUp, label: 'Overall Average', value: results.length ? `${overallAvg}%` : '--' },
+    { icon: TrendingUp, label: 'Overall Average', value: activeResults.length ? `${overallAvg}%` : '--' },
     { icon: BookOpen, label: 'Total Subjects', value: subjectPerformance.length },
     { icon: Award, label: 'Best Subject', value: bestSubject },
     { icon: TrendingDown, label: 'Weak Subject', value: weakSubject },
-    { icon: BarChart3, label: 'Results Count', value: results.length },
+    { icon: BarChart3, label: 'Results Count', value: activeResults.length },
   ];
 
-  const hasData = results.length > 0;
+  const hasData = activeResults.length > 0;
 
   return (
     <div className="space-y-6 relative z-10 px-4 py-6">
