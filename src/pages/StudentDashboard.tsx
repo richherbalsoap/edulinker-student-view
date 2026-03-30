@@ -8,6 +8,7 @@ import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar, AlertTriangl
 const StudentDashboard = () => {
   const { student, schoolId } = useStudentAuth();
   const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { isDeleted } = useDeletedItems();
   const [results, setResults] = useState<any[]>([]);
   const [homework, setHomework] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);
