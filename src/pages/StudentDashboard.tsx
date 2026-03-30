@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
+import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
-import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar, AlertTriangle } from 'lucide-react';
 
 const StudentDashboard = () => {
   const { student, schoolId } = useStudentAuth();
   const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { isDeleted } = useDeletedItems();
   const [results, setResults] = useState<any[]>([]);
   const [homework, setHomework] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -51,15 +53,15 @@ const StudentDashboard = () => {
     fetchData();
   }, [student, schoolId, startDate, endDate]);
 
-  const overallPercentage = useMemo(() => {
-    if (results.length === 0) return 0;
-    return Math.round(results.reduce((sum, r) => sum + (r.percentage || 0), 0) / results.length);
-  }, [results]);
+  // Filter out deleted items
+  const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);
+  const activeHomework = useMemo(() => homework.filter(h => !isDeleted(h.id)), [homework, isDeleted]);
+  const activeComplaints = useMemo(() => complaints.filter(c => !isDeleted(c.id)), [complaints, isDeleted]);
 
-  const subjects = useMemo(() => {
-    const unique = new Set(results.map(r => r.subject));
-    return unique.size;
-  }, [results]);
+  const overallPercentage = useMemo(() => {
+    if (activeResults.length === 0) return 0;
+    return Math.round(activeResults.reduce((sum, r) => sum + (r.percentage || 0), 0) / activeResults.length);
+  }, [activeResults]);
 
   // Calendar logic
   const today = new Date();
@@ -79,16 +81,17 @@ const StudentDashboard = () => {
       d.getMonth() === selectedDate.getMonth() &&
       d.getFullYear() === selectedDate.getFullYear();
   };
-  const dateHomework = homework.filter(h => matchesDate(h.created_at));
-  const dateComplaints = complaints.filter(c => matchesDate(c.created_at));
-  const dateResults = results.filter(r => matchesDate(r.created_at));
+  const dateHomework = activeHomework.filter(h => matchesDate(h.created_at));
+  const dateComplaints = activeComplaints.filter(c => matchesDate(c.created_at));
+  const dateResults = activeResults.filter(r => matchesDate(r.created_at));
   const hasDateData = dateHomework.length > 0 || dateComplaints.length > 0 || dateResults.length > 0;
 
   const statCards = [
     { icon: LayoutDashboard, label: 'Class', value: `${student?.standard}-${student?.section}` },
-    { icon: TrendingUp, label: 'Overall Percentage', value: results.length ? `${overallPercentage}%` : '--' },
-    { icon: FileText, label: 'Total Subjects', value: subjects },
-    { icon: BookOpen, label: 'Homework Assigned', value: homeworkCount },
+    { icon: TrendingUp, label: 'Overall Percentage', value: activeResults.length ? `${overallPercentage}%` : '--' },
+    { icon: FileText, label: 'Total Results', value: activeResults.length },
+    { icon: BookOpen, label: 'Homework Assigned', value: activeHomework.length },
+    { icon: AlertTriangle, label: 'Complaints', value: activeComplaints.length },
   ];
 
   return (
