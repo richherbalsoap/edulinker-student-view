@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
+import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
-import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar, AlertTriangle } from 'lucide-react';
 
 const StudentDashboard = () => {
   const { student, schoolId } = useStudentAuth();
