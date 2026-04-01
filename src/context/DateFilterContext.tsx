@@ -25,6 +25,8 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { filterStartDate, filterEndDate } = useMemo(() => {
     const now = new Date();
     switch (filterType) {
+      case 'all':
+        return { filterStartDate: new Date(2000, 0, 1), filterEndDate: new Date(2099, 11, 31, 23, 59, 59) };
       case 'today': {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
         const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
