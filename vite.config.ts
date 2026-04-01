@@ -18,17 +18,35 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "auto",
+      injectRegister: false,
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
       includeAssets: ["favicon.ico", "robots.txt"],
       workbox: {
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        skipWaiting: true,
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
-        skipWaiting: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.(js|css|png|jpg|jpeg|svg|ico|webp|woff2?)$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "assets-cache",
+              expiration: { maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: /\/$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-cache",
+              expiration: { maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 },
+            },
+          },
+        ],
       },
       manifest: {
         name: "EDULinker Student View App",

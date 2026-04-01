@@ -1,64 +1,90 @@
-// EDULinker Std View — Service Worker
-// Network-first: har request fresh server se aayegi
-// PWA auto-update hogi bina manual cache clear ke
+/**
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-const CACHE_NAME = "edulinker-sw-v1";
+// If the loader is already loaded, just stop.
+if (!self.define) {
+  let registry = {};
 
-// Turant activate ho jaao, wait mat karo
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
-});
+  // Used for `eval` and `importScripts` where we can't get script URL by other means.
+  // In both cases, it's safe to use a global var because those functions are synchronous.
+  let nextDefineUri;
 
-// Purane caches clean karo aur turant control lo
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        return Promise.all(cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name)));
-      })
-      .then(() => self.clients.claim()),
-  );
-});
-
-// Network-first strategy — hamesha server se fresh data lo
-self.addEventListener("fetch", (event) => {
-  // Firebase messaging requests skip karo
-  if (
-    event.request.url.includes("firebaseinstallations") ||
-    event.request.url.includes("fcmregistrations") ||
-    event.request.url.includes("firebase")
-  ) {
-    return;
-  }
-
-  // Navigation requests (page loads) — hamesha network se
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        // Offline fallback — cached index.html serve karo
-        return caches.match("/index.html");
-      }),
-    );
-    return;
-  }
-
-  // Baaki sab — network first, fail pe cache
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Successful response cache mein bhi save karo (offline ke liye)
-        if (response && response.status === 200 && response.type === "basic") {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+  const singleRequire = (uri, parentUri) => {
+    uri = new URL(uri + ".js", parentUri).href;
+    return registry[uri] || (
+      
+        new Promise(resolve => {
+          if ("document" in self) {
+            const script = document.createElement("script");
+            script.src = uri;
+            script.onload = resolve;
+            document.head.appendChild(script);
+          } else {
+            nextDefineUri = uri;
+            importScripts(uri);
+            resolve();
+          }
+        })
+      
+      .then(() => {
+        let promise = registry[uri];
+        if (!promise) {
+          throw new Error(`Module ${uri} didn’t register its module`);
         }
-        return response;
+        return promise;
       })
-      .catch(() => {
-        // Network fail — cache se serve karo
-        return caches.match(event.request);
-      }),
-  );
-});
+    );
+  };
+
+  self.define = (depsNames, factory) => {
+    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
+    if (registry[uri]) {
+      // Module is already loading or loaded.
+      return;
+    }
+    let exports = {};
+    const require = depUri => singleRequire(depUri, uri);
+    const specialDeps = {
+      module: { uri },
+      exports,
+      require
+    };
+    registry[uri] = Promise.all(depsNames.map(
+      depName => specialDeps[depName] || require(depName)
+    )).then(deps => {
+      factory(...deps);
+      return exports;
+    });
+  };
+}
+define(['./workbox-5a5d9309'], (function (workbox) { 'use strict';
+
+  self.skipWaiting();
+  workbox.clientsClaim();
+
+  /**
+   * The precacheAndRoute() method efficiently caches and responds to
+   * requests for URLs in the manifest.
+   * See https://goo.gl/S9QRab
+   */
+  workbox.precacheAndRoute([{
+    "url": "index.html",
+    "revision": "0.i64flmj6et"
+  }], {});
+  workbox.cleanupOutdatedCaches();
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
+    allowlist: [/^\/$/],
+    denylist: [/^\/~oauth/]
+  }));
+
+}));
