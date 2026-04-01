@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
-import { useAcademicYear } from '@/context/AcademicYearContext';
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
+import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { Bot, Send, User } from 'lucide-react';
 
 interface ChatMessage {
@@ -10,8 +11,8 @@ interface ChatMessage {
 }
 
 const AIInsightPage = () => {
-  const { student } = useStudentAuth();
-  const { startDate, endDate } = useAcademicYear();
+  const { student, schoolId } = useStudentAuth();
+  const { filterType, filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [results, setResults] = useState<any[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', text: "Hello! I'm your Academic Insight Assistant. Ask me about your overall performance, specific subjects, weak areas, or improvement tips." },
@@ -20,22 +21,22 @@ const AIInsightPage = () => {
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { schoolId } = useStudentAuth();
-
   useEffect(() => {
-    if (!student || !schoolId) return;
+    if (!student) return;
     const fetch = async () => {
-      const { data } = await supabase
+      let query = supabase
         .from('results')
         .select('*')
-        .eq('student_id', student.id)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .eq('student_id', student.id);
+
+      query = applySchoolScopeFilter(query, schoolId, filterType === 'all');
+      query = applyCreatedAtFilter(query, filterType, startDate, endDate);
+
+      const { data } = await query;
       setResults(data || []);
     };
     fetch();
-  }, [student, schoolId, startDate, endDate]);
+  }, [student, schoolId, filterType, startDate, endDate]);
 
   const analytics = useMemo(() => {
     if (results.length === 0) return null;

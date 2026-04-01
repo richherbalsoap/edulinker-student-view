@@ -3,6 +3,7 @@ import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
+import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { TrendingUp, TrendingDown, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -10,7 +11,7 @@ const COLORS = ['#3b82f6', '#22c55e', '#a855f7', '#eab308', '#ec4899', '#06b6d4'
 
 const AcademicPerformancePage = () => {
   const { student } = useStudentAuth();
-  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { filterType, filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,22 +19,23 @@ const AcademicPerformancePage = () => {
   const { isDeleted } = useDeletedItems();
 
   useEffect(() => {
-    if (!student || !schoolId) return;
+    if (!student) return;
     const fetch = async () => {
       setLoading(true);
-      const { data } = await supabase
+      let query = supabase
         .from('results')
         .select('*')
-        .eq('student_id', student.id)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: true });
+        .eq('student_id', student.id);
+
+      query = applySchoolScopeFilter(query, schoolId, filterType === 'all');
+      query = applyCreatedAtFilter(query, filterType, startDate, endDate);
+
+      const { data } = await query.order('created_at', { ascending: true });
       setResults(data || []);
       setLoading(false);
     };
     fetch();
-  }, [student, schoolId, startDate, endDate]);
+  }, [student, schoolId, filterType, startDate, endDate]);
 
   // Filter out deleted results
   const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);

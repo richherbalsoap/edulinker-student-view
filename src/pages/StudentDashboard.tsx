@@ -3,11 +3,12 @@ import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
+import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar, AlertTriangle } from 'lucide-react';
 
 const StudentDashboard = () => {
   const { student, schoolId } = useStudentAuth();
-  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { filterType, filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const { isDeleted } = useDeletedItems();
   const [results, setResults] = useState<any[]>([]);
   const [homework, setHomework] = useState<any[]>([]);
@@ -16,42 +17,44 @@ const StudentDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
-    if (!student || !schoolId) return;
+    if (!student) return;
     const fetchData = async () => {
-      const { data: res, error: resErr } = await supabase
+      const includeLegacyNull = filterType === 'all';
+
+      let resultsQuery = supabase
         .from('results')
         .select('*')
-        .eq('student_id', student.id)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .eq('student_id', student.id);
+      resultsQuery = applySchoolScopeFilter(resultsQuery, schoolId, includeLegacyNull);
+      resultsQuery = applyCreatedAtFilter(resultsQuery, filterType, startDate, endDate);
+      const { data: res, error: resErr } = await resultsQuery;
       if (resErr) console.error('Dashboard results error:', resErr.message);
       setResults(res || []);
 
-      const { data: hw, count, error: hwErr } = await supabase
+      let homeworkQuery = supabase
         .from('homework')
         .select('*', { count: 'exact' })
         .ilike('standard', student.standard)
-        .ilike('section', student.section)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .ilike('section', student.section);
+      homeworkQuery = applySchoolScopeFilter(homeworkQuery, schoolId, includeLegacyNull);
+      homeworkQuery = applyCreatedAtFilter(homeworkQuery, filterType, startDate, endDate);
+      const { data: hw, count, error: hwErr } = await homeworkQuery;
       if (hwErr) console.error('Dashboard homework error:', hwErr.message);
       setHomework(hw || []);
       setHomeworkCount(count || 0);
 
-      const { data: comp, error: compErr } = await supabase
+      let complaintsQuery = supabase
         .from('complaints')
         .select('*')
-        .eq('student_id', student.id)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .eq('student_id', student.id);
+      complaintsQuery = applySchoolScopeFilter(complaintsQuery, schoolId, includeLegacyNull);
+      complaintsQuery = applyCreatedAtFilter(complaintsQuery, filterType, startDate, endDate);
+      const { data: comp, error: compErr } = await complaintsQuery;
       if (compErr) console.error('Dashboard complaints error:', compErr.message);
       setComplaints(comp || []);
     };
     fetchData();
-  }, [student, schoolId, startDate, endDate]);
+  }, [student, schoolId, filterType, startDate, endDate]);
 
   // Filter out deleted items
   const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);

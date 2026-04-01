@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
+import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { MessageSquare, ExternalLink } from 'lucide-react';
 import DeleteButton from '@/components/DeleteButton';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
@@ -22,7 +23,7 @@ const isImageFile = (filePath: string) => {
 
 const ComplaintsPage = () => {
   const { student } = useStudentAuth();
-  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { filterType, filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,17 +31,18 @@ const ComplaintsPage = () => {
   const { isDeleted } = useDeletedItems();
 
   useEffect(() => {
-    if (!student || !schoolId) return;
+    if (!student) return;
     const fetchComplaints = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('complaints')
         .select('*')
-        .eq('student_id', student.id)
-        .eq('school_id', schoolId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
+        .eq('student_id', student.id);
+
+      query = applySchoolScopeFilter(query, schoolId, filterType === 'all');
+      query = applyCreatedAtFilter(query, filterType, startDate, endDate);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
       if (error) {
         console.error('Complaints fetch error:', error.message);
       }
@@ -48,7 +50,7 @@ const ComplaintsPage = () => {
       setLoading(false);
     };
     fetchComplaints();
-  }, [student, schoolId, startDate, endDate]);
+  }, [student, schoolId, filterType, startDate, endDate]);
 
   return (
     <div className="space-y-6 relative z-10 px-4 py-6">
