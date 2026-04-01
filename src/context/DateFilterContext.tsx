@@ -51,7 +51,7 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return { filterStartDate: start, filterEndDate: end };
       }
       default:
-        return { filterStartDate: academicStart, filterEndDate: academicEnd };
+        return { filterStartDate: new Date(2020, 0, 1), filterEndDate: new Date(2099, 11, 31, 23, 59, 59) };
     }
   }, [filterType, customStartDate, customEndDate, academicStart, academicEnd]);
 
