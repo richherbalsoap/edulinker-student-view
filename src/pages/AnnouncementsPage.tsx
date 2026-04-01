@@ -1,25 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
+import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
+import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { Bell } from 'lucide-react';
 import DeleteButton from '@/components/DeleteButton';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
 
 const AnnouncementsPage = () => {
-  const { schoolId } = useStudentAuth();
+  const { schoolId, isLoggedIn } = useStudentAuth();
+  const { filterType, filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const { isDeleted } = useDeletedItems();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!schoolId) return;
+    if (!isLoggedIn) return;
     const fetchAnnouncements = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('announcements')
-        .select('*')
-        .eq('school_id', schoolId)
-        .order('created_at', { ascending: false });
+        .select('*');
+
+      query = applySchoolScopeFilter(query, schoolId, filterType === 'all');
+      query = applyCreatedAtFilter(query, filterType, startDate, endDate);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
       if (error) {
         console.error('Announcements fetch error:', error.message);
       }
@@ -27,7 +33,7 @@ const AnnouncementsPage = () => {
       setLoading(false);
     };
     fetchAnnouncements();
-  }, [schoolId]);
+  }, [isLoggedIn, schoolId, filterType, startDate, endDate]);
 
   const typeBadgeColor = (type: string | null) => {
     switch (type?.toLowerCase()) {

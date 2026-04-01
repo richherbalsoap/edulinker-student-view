@@ -2,37 +2,50 @@ import { useEffect, useState } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from "@/integrations/supabase/client";
+import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { IndianRupee } from "lucide-react";
 
 const FeesPage = () => {
   const { student, schoolId } = useStudentAuth();
-  const { filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
+  const { filterType, filterStartDate: startDate, filterEndDate: endDate } = useDateFilter();
   const [fees, setFees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!student || !schoolId) return;
+    if (!student) return;
     const fetchFees = async () => {
       setLoading(true);
-      const [byStudent, byClass] = await Promise.all([
-        supabase
+      const includeLegacyNull = filterType === 'all';
+
+      const buildStudentFeesQuery = () => {
+        let query = supabase
           .from("fees_reminders")
           .select("*")
-          .eq("student_id", student.id)
-          .eq("school_id", schoolId)
-          .gte("created_at", startDate.toISOString())
-          .lte("created_at", endDate.toISOString())
-          .order("created_at", { ascending: false }),
-        supabase
+          .eq("student_id", student.id);
+
+        query = applySchoolScopeFilter(query, schoolId, includeLegacyNull);
+        query = applyCreatedAtFilter(query, filterType, startDate, endDate);
+
+        return query.order("created_at", { ascending: false });
+      };
+
+      const buildClassFeesQuery = () => {
+        let query = supabase
           .from("fees_reminders")
           .select("*")
           .is("student_id", null)
           .ilike("standard", student.standard)
-          .ilike("section", student.section)
-          .eq("school_id", schoolId)
-          .gte("created_at", startDate.toISOString())
-          .lte("created_at", endDate.toISOString())
-          .order("created_at", { ascending: false }),
+          .ilike("section", student.section);
+
+        query = applySchoolScopeFilter(query, schoolId, includeLegacyNull);
+        query = applyCreatedAtFilter(query, filterType, startDate, endDate);
+
+        return query.order("created_at", { ascending: false });
+      };
+
+      const [byStudent, byClass] = await Promise.all([
+        buildStudentFeesQuery(),
+        buildClassFeesQuery(),
       ]);
       if (byStudent.error) console.error('Fees (student) fetch error:', byStudent.error.message);
       if (byClass.error) console.error('Fees (class) fetch error:', byClass.error.message);
@@ -42,7 +55,7 @@ const FeesPage = () => {
       setLoading(false);
     };
     fetchFees();
-  }, [student, schoolId, startDate, endDate]);
+  }, [student, schoolId, filterType, startDate, endDate]);
 
   return (
     <div className="space-y-6 relative z-10 px-4 py-6">
