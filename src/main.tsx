@@ -3,7 +3,7 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App.tsx";
 import "./index.css";
 
-// Force unregister service workers in preview/iframe contexts
+// Lovable preview/iframe mein SW disable karo
 const isInIframe = (() => {
   try { return window.self !== window.top; } catch { return true; }
 })();
@@ -16,22 +16,18 @@ if (isPreviewHost || isInIframe) {
     regs.forEach((r) => r.unregister());
   });
 } else {
-  // Register SW with auto-update — force reload on new version
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      // New version available — update and reload instantly
-      updateSW(true);
+      const event = new CustomEvent("pwa-update-available", { detail: { updateSW } });
+      window.dispatchEvent(event);
     },
     onOfflineReady() {
-      window.dispatchEvent(new Event("lovable-pwa-ready"));
+      window.dispatchEvent(new Event("pwa-offline-ready"));
     },
     onRegisteredSW(_url, registration) {
-      // Check for updates every 60 seconds
       if (registration) {
-        setInterval(() => {
-          registration.update();
-        }, 60 * 1000);
+        setInterval(() => registration.update(), 60 * 1000);
       }
     },
   });
