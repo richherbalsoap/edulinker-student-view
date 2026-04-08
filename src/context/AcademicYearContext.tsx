@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 
 interface AcademicYearContextType {
-  academicYear: string; // e.g. "2025-2026"
+  academicYear: string;
   setAcademicYear: (year: string) => void;
   startDate: Date;
   endDate: Date;
@@ -10,35 +10,28 @@ interface AcademicYearContextType {
 
 const AcademicYearContext = createContext<AcademicYearContextType | null>(null);
 
-function getCurrentAcademicYear(): string {
-  const now = new Date();
-  const month = now.getMonth(); // 0-indexed
-  const year = now.getFullYear();
-  // Academic year runs April (3) to March
-  if (month >= 3) {
-    return `${year}-${year + 1}`;
-  }
-  return `${year - 1}-${year}`;
+function getCurrentYear(): string {
+  return `${new Date().getFullYear()}`;
 }
 
 function generateYearOptions(): string[] {
   const options: string[] = [];
   for (let y = 2024; y <= 2050; y++) {
-    options.push(`${y}-${y + 1}`);
+    options.push(`${y}`);
   }
   return options;
 }
 
-function parseDateRange(academicYear: string): { start: Date; end: Date } {
-  const [startYear] = academicYear.split('-').map(Number);
+function parseDateRange(year: string): { start: Date; end: Date } {
+  const y = Number(year);
   return {
-    start: new Date(startYear, 3, 1), // April 1
-    end: new Date(startYear + 1, 2, 31, 23, 59, 59), // March 31
+    start: new Date(y, 0, 1, 0, 0, 0),       // Jan 1
+    end: new Date(y, 11, 31, 23, 59, 59),     // Dec 31
   };
 }
 
 export const AcademicYearProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear);
+  const [academicYear, setAcademicYear] = useState(getCurrentYear);
   const yearOptions = useMemo(generateYearOptions, []);
   const { start, end } = useMemo(() => parseDateRange(academicYear), [academicYear]);
 
