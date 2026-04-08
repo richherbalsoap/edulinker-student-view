@@ -17,7 +17,7 @@ interface DateFilterContextType {
 const DateFilterContext = createContext<DateFilterContextType | null>(null);
 
 export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { startDate: academicStart, endDate: academicEnd } = useAcademicYear();
+  const { startDate: yearStart, endDate: yearEnd, isAllYears } = useAcademicYear();
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
@@ -26,7 +26,8 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const now = new Date();
     switch (filterType) {
       case 'all':
-        return { filterStartDate: new Date(2000, 0, 1), filterEndDate: new Date(2099, 11, 31, 23, 59, 59) };
+        // "All" in date filter = use the year selector's range
+        return { filterStartDate: yearStart, filterEndDate: yearEnd };
       case 'today': {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
         const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -48,14 +49,14 @@ export const DateFilterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return { filterStartDate: start, filterEndDate: end };
       }
       case 'custom': {
-        const start = customStartDate || academicStart;
-        const end = customEndDate || academicEnd;
+        const start = customStartDate || yearStart;
+        const end = customEndDate || yearEnd;
         return { filterStartDate: start, filterEndDate: end };
       }
       default:
-        return { filterStartDate: new Date(2020, 0, 1), filterEndDate: new Date(2099, 11, 31, 23, 59, 59) };
+        return { filterStartDate: yearStart, filterEndDate: yearEnd };
     }
-  }, [filterType, customStartDate, customEndDate, academicStart, academicEnd]);
+  }, [filterType, customStartDate, customEndDate, yearStart, yearEnd]);
 
   return (
     <DateFilterContext.Provider value={{

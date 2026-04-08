@@ -37,7 +37,9 @@ const StudentHeader = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
               className="bg-transparent text-foreground/90 text-sm font-medium outline-none cursor-pointer"
             >
               {yearOptions.map(year => (
-                <option key={year} value={year} className="bg-background text-foreground">{year}</option>
+                <option key={year} value={year} className="bg-background text-foreground">
+                  {year === 'all' ? 'All Years' : year}
+                </option>
               ))}
             </select>
           </div>

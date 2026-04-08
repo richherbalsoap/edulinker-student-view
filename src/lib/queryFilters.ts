@@ -4,10 +4,7 @@ export const applyCreatedAtFilter = (
   startDate: Date,
   endDate: Date,
 ) => {
-  if (filterType === 'all') {
-    return query;
-  }
-
+  // Always apply date range — the range already accounts for "all" via year selector
   return query
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString());
