@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar, AlertTriangle } from 'lucide-react';
 
 const StudentDashboard = () => {
@@ -13,50 +14,38 @@ const StudentDashboard = () => {
   const [results, setResults] = useState<any[]>([]);
   const [homework, setHomework] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);
-  const [homeworkCount, setHomeworkCount] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!student) return;
-    const fetchData = async () => {
-      const includeLegacyNull = filterType === 'all';
+    const includeLegacyNull = filterType === 'all';
 
-      let resultsQuery = supabase
-        .from('results')
-        .select('*')
-        .eq('student_id', student.id);
-      resultsQuery = applySchoolScopeFilter(resultsQuery, schoolId, includeLegacyNull);
-      resultsQuery = applyCreatedAtFilter(resultsQuery, filterType, startDate, endDate);
-      const { data: res, error: resErr } = await resultsQuery;
-      if (resErr) console.error('Dashboard results error:', resErr.message);
-      setResults(res || []);
+    let resultsQuery = supabase.from('results').select('*').eq('student_id', student.id);
+    resultsQuery = applySchoolScopeFilter(resultsQuery, schoolId, includeLegacyNull);
+    resultsQuery = applyCreatedAtFilter(resultsQuery, filterType, startDate, endDate);
+    const { data: res } = await resultsQuery;
+    setResults(res || []);
 
-      let homeworkQuery = supabase
-        .from('homework')
-        .select('*', { count: 'exact' })
-        .ilike('standard', student.standard)
-        .ilike('section', student.section);
-      homeworkQuery = applySchoolScopeFilter(homeworkQuery, schoolId, includeLegacyNull);
-      homeworkQuery = applyCreatedAtFilter(homeworkQuery, filterType, startDate, endDate);
-      const { data: hw, count, error: hwErr } = await homeworkQuery;
-      if (hwErr) console.error('Dashboard homework error:', hwErr.message);
-      setHomework(hw || []);
-      setHomeworkCount(count || 0);
+    let homeworkQuery = supabase.from('homework').select('*').ilike('standard', student.standard).ilike('section', student.section);
+    homeworkQuery = applySchoolScopeFilter(homeworkQuery, schoolId, includeLegacyNull);
+    homeworkQuery = applyCreatedAtFilter(homeworkQuery, filterType, startDate, endDate);
+    const { data: hw } = await homeworkQuery;
+    setHomework(hw || []);
 
-      let complaintsQuery = supabase
-        .from('complaints')
-        .select('*')
-        .eq('student_id', student.id);
-      complaintsQuery = applySchoolScopeFilter(complaintsQuery, schoolId, includeLegacyNull);
-      complaintsQuery = applyCreatedAtFilter(complaintsQuery, filterType, startDate, endDate);
-      const { data: comp, error: compErr } = await complaintsQuery;
-      if (compErr) console.error('Dashboard complaints error:', compErr.message);
-      setComplaints(comp || []);
-    };
-    fetchData();
+    let complaintsQuery = supabase.from('complaints').select('*').eq('student_id', student.id);
+    complaintsQuery = applySchoolScopeFilter(complaintsQuery, schoolId, includeLegacyNull);
+    complaintsQuery = applyCreatedAtFilter(complaintsQuery, filterType, startDate, endDate);
+    const { data: comp } = await complaintsQuery;
+    setComplaints(comp || []);
   }, [student, schoolId, filterType, startDate, endDate]);
 
-  // Filter out deleted items
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Realtime subscriptions
+  useRealtimeSubscription('results', fetchData, !!student);
+  useRealtimeSubscription('homework', fetchData, !!student);
+  useRealtimeSubscription('complaints', fetchData, !!student);
+
   const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);
   const activeHomework = useMemo(() => homework.filter(h => !isDeleted(h.id)), [homework, isDeleted]);
   const activeComplaints = useMemo(() => complaints.filter(c => !isDeleted(c.id)), [complaints, isDeleted]);
@@ -66,7 +55,6 @@ const StudentDashboard = () => {
     return Math.round(activeResults.reduce((sum, r) => sum + (r.percentage || 0), 0) / activeResults.length);
   }, [activeResults]);
 
-  // Calendar logic
   const today = new Date();
   const calMonth = selectedDate.getMonth();
   const calYear = selectedDate.getFullYear();
@@ -77,12 +65,9 @@ const StudentDashboard = () => {
   const prevMonth = () => setSelectedDate(new Date(calYear, calMonth - 1, 1));
   const nextMonth = () => setSelectedDate(new Date(calYear, calMonth + 1, 1));
 
-  // Date-filtered items
   const matchesDate = (createdAt: string) => {
     const d = new Date(createdAt);
-    return d.getDate() === selectedDate.getDate() &&
-      d.getMonth() === selectedDate.getMonth() &&
-      d.getFullYear() === selectedDate.getFullYear();
+    return d.getDate() === selectedDate.getDate() && d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
   };
   const dateHomework = activeHomework.filter(h => matchesDate(h.created_at));
   const dateComplaints = activeComplaints.filter(c => matchesDate(c.created_at));
@@ -91,58 +76,56 @@ const StudentDashboard = () => {
 
   const statCards = [
     { icon: LayoutDashboard, label: 'Class', value: `${student?.standard}-${student?.section}` },
-    { icon: TrendingUp, label: 'Overall Percentage', value: activeResults.length ? `${overallPercentage}%` : '--' },
-    { icon: FileText, label: 'Total Results', value: activeResults.length },
-    { icon: BookOpen, label: 'Homework Assigned', value: activeHomework.length },
+    { icon: TrendingUp, label: 'Overall %', value: activeResults.length ? `${overallPercentage}%` : '--' },
+    { icon: FileText, label: 'Results', value: activeResults.length },
+    { icon: BookOpen, label: 'Homework', value: activeHomework.length },
     { icon: AlertTriangle, label: 'Complaints', value: activeComplaints.length },
   ];
 
   return (
-    <div className="space-y-6 relative z-10 px-4 py-6">
-      <div className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-6">
-        <h1 className="text-3xl font-bold text-foreground">
+    <div className="space-y-4 sm:space-y-6 relative z-10 px-3 sm:px-4 py-4 sm:py-6">
+      <div className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-4 sm:p-6">
+        <h1 className="text-xl sm:text-3xl font-bold text-foreground">
           Welcome, <span className="text-primary">{student?.name}</span>
         </h1>
-        <p className="text-muted-foreground mt-1">Here's your academic overview</p>
+        <p className="text-muted-foreground mt-1 text-sm">Here's your academic overview</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {statCards.map(stat => (
-          <div key={stat.label} className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <stat.icon size={20} className="text-primary" />
-              <p className="text-foreground/60 text-sm">{stat.label}</p>
+          <div key={stat.label} className="bg-card/30 backdrop-blur-md border border-primary/20 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <stat.icon size={16} className="text-primary shrink-0" />
+              <p className="text-foreground/60 text-xs truncate">{stat.label}</p>
             </div>
-            <p className="text-4xl font-bold text-primary drop-shadow-[0_0_15px_hsl(51,100%,50%,0.5)]">{stat.value}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-primary drop-shadow-[0_0_15px_hsl(51,100%,50%,0.5)]">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Calendar + Activity Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Date Activity Panel */}
-        <div className="bg-black/30 backdrop-blur-md border border-primary/20 rounded-xl p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+        <div className="bg-black/30 backdrop-blur-md border border-primary/20 rounded-xl p-3 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground mb-3">
             Activity on {selectedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </h2>
           {hasDateData ? (
-            <div className="space-y-3 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
               {dateHomework.map(h => (
-                <div key={h.id} className="bg-black/40 rounded-lg p-3 border border-primary/10">
+                <div key={h.id} className="bg-black/40 rounded-lg p-2.5 border border-primary/10">
                   <span className="text-xs text-primary/60 font-bold">HOMEWORK</span>
-                  <p className="text-foreground text-sm">{h.subject} — {h.description}</p>
+                  <p className="text-foreground text-sm truncate">{h.subject} — {h.description}</p>
                 </div>
               ))}
               {dateComplaints.map(c => (
-                <div key={c.id} className="bg-black/40 rounded-lg p-3 border border-primary/10">
+                <div key={c.id} className="bg-black/40 rounded-lg p-2.5 border border-primary/10">
                   <span className="text-xs text-primary/60 font-bold">COMPLAINT</span>
                   <p className="text-foreground text-sm truncate">{c.description}</p>
                 </div>
               ))}
               {dateResults.map(r => (
-                <div key={r.id} className="bg-black/40 rounded-lg p-3 border border-primary/10">
+                <div key={r.id} className="bg-black/40 rounded-lg p-2.5 border border-primary/10">
                   <span className="text-xs text-primary/60 font-bold">RESULT</span>
-                  <p className="text-foreground text-sm">{r.subject} — {r.marks_obtained}/{r.total_marks} ({r.percentage}%)</p>
+                  <p className="text-foreground text-sm truncate">{r.subject} — {r.marks_obtained}/{r.total_marks} ({r.percentage}%)</p>
                 </div>
               ))}
             </div>
@@ -151,21 +134,20 @@ const StudentDashboard = () => {
           )}
         </div>
 
-        {/* Calendar */}
-        <div className="bg-black/30 backdrop-blur-md border border-primary/20 rounded-xl p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Calendar size={20} className="text-primary" /> Calendar
+        <div className="bg-black/30 backdrop-blur-md border border-primary/20 rounded-xl p-3 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <Calendar size={18} className="text-primary" /> Calendar
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button onClick={prevMonth} className="p-1 rounded hover:bg-primary/10 text-primary transition-colors">&lt;</button>
-              <span className="text-foreground text-sm font-medium">{monthNames[calMonth]} {calYear}</span>
+              <span className="text-foreground text-xs sm:text-sm font-medium">{monthNames[calMonth]} {calYear}</span>
               <button onClick={nextMonth} className="p-1 rounded hover:bg-primary/10 text-primary transition-colors">&gt;</button>
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} className="text-primary/60 font-semibold py-1">{d}</div>
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-xs">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+              <div key={`${d}-${i}`} className="text-primary/60 font-semibold py-1">{d}</div>
             ))}
             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -176,7 +158,7 @@ const StudentDashboard = () => {
                 <div
                   key={day}
                   onClick={() => setSelectedDate(new Date(calYear, calMonth, day))}
-                  className={`py-1.5 rounded cursor-pointer transition-all duration-200 text-sm
+                  className={`py-1 sm:py-1.5 rounded cursor-pointer transition-all duration-200 text-xs sm:text-sm
                     ${isSelected ? 'bg-primary text-primary-foreground font-bold shadow-[0_0_10px_hsl(51,100%,50%,0.4)]'
                       : isToday ? 'bg-primary/20 text-primary font-bold border border-primary/30'
                       : 'text-foreground/70 hover:bg-primary/10 hover:text-foreground'}`}
