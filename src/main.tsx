@@ -16,18 +16,36 @@ if (isPreviewHost || isInIframe) {
     regs.forEach((r) => r.unregister());
   });
 } else {
+  // Force clear old caches on load for mobile freshness
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      names.forEach(name => {
+        if (name.includes('workbox') || name.includes('assets-cache') || name.includes('html-cache')) {
+          caches.delete(name);
+        }
+      });
+    });
+  }
+
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      const event = new CustomEvent("pwa-update-available", { detail: { updateSW } });
-      window.dispatchEvent(event);
+      // Turant reload — no toast delay on mobile
+      updateSW(true);
     },
     onOfflineReady() {
-      window.dispatchEvent(new Event("pwa-offline-ready"));
+      console.log('[PWA] Offline ready');
     },
     onRegisteredSW(_url, registration) {
       if (registration) {
-        setInterval(() => registration.update(), 60 * 1000);
+        // Check for updates every 30 seconds (faster for mobile)
+        setInterval(() => registration.update(), 30 * 1000);
+        // Also force check on visibility change (when user switches back to app)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            registration.update();
+          }
+        });
       }
     },
   });
