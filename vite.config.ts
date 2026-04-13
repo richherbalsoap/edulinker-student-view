@@ -35,7 +35,8 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkFirst",
             options: {
               cacheName: "assets-cache",
-              expiration: { maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 },
+              networkTimeoutSeconds: 3,
             },
           },
           {
@@ -43,7 +44,8 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkFirst",
             options: {
               cacheName: "html-cache",
-              expiration: { maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 },
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 },
+              networkTimeoutSeconds: 3,
             },
           },
         ],
