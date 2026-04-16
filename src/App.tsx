@@ -69,6 +69,7 @@ const AppContent = () => {
                   <Route path="/ai-insight" element={<AIInsightPage />} />
                   <Route path="/fees" element={<FeesPage />} />
                   <Route path="/bin" element={<BinPage />} />
+                  <Route path="/report" element={<ReportPage />} />
                 </Route>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />
