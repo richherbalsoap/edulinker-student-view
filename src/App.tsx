@@ -22,6 +22,7 @@ import AcademicPerformancePage from "./pages/AcademicPerformancePage";
 import AIInsightPage from "./pages/AIInsightPage";
 import FeesPage from "./pages/FeesPage";
 import BinPage from "./pages/BinPage";
+import ReportPage from "./pages/ReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const AppContent = () => {
                   <Route path="/ai-insight" element={<AIInsightPage />} />
                   <Route path="/fees" element={<FeesPage />} />
                   <Route path="/bin" element={<BinPage />} />
+                  <Route path="/report" element={<ReportPage />} />
                 </Route>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />
