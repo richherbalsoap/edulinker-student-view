@@ -40,7 +40,7 @@ const groupByExam = (results: any[]) => {
     map[key].push(r);
   }
   // Sort exam groups: Unit Test → Mid Term → Final Exam → Others
-  const order = ["Unit Test", "Mid Term", "Final Exam"];
+  const order = ["Weekly Exam", "Unit Test", "Mid Term", "Final Exam"];
   return Object.entries(map).sort(([a], [b]) => {
     const ai = order.indexOf(a),
       bi = order.indexOf(b);
