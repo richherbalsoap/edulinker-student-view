@@ -39,15 +39,6 @@ export default defineConfig(({ mode }) => ({
               networkTimeoutSeconds: 3,
             },
           },
-          {
-            urlPattern: /\/$/,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "html-cache",
-              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 },
-              networkTimeoutSeconds: 3,
-            },
-          },
         ],
       },
       manifest: {

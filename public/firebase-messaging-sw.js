@@ -1,5 +1,13 @@
-importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.10.0/firebase-messaging-compat.js');
+
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
 firebase.initializeApp({
   apiKey: "AIzaSyB9wHnIbjKNjSZMPHJ0lhkqmy7Dk4upHPI",
@@ -13,8 +21,12 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: '/pwa-192x192.png'
+  const title = payload.notification?.title || 'EDULinker';
+
+  self.registration.showNotification(title, {
+    body: payload.notification?.body || '',
+    icon: '/pwa-192x192.png',
+    badge: '/pwa-192x192.png',
+    data: payload.data || {},
   });
 });
