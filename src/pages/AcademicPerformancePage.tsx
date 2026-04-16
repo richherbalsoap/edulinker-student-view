@@ -100,11 +100,12 @@ const pctColor = (p: number) => getGrade(p).color;
 
 const EXAM_TABS = [
   { key: "all", label: "All Exams" },
+  { key: "Weekly Exam", label: "Weekly Exam" },
   { key: "Unit Test", label: "Unit Test" },
   { key: "Mid Term", label: "Mid Term" },
   { key: "Final Exam", label: "Final Exam" },
 ];
-const EXAM_ORDER = ["Unit Test", "Mid Term", "Final Exam"];
+const EXAM_ORDER = ["Weekly Exam", "Unit Test", "Mid Term", "Final Exam"];
 const SUBJECT_COLORS = [
   "#3b82f6",
   "#22c55e",
