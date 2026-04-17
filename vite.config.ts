@@ -19,11 +19,13 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false,
+      filename: "firebase-messaging-sw.js",
       devOptions: {
         enabled: false,
       },
       includeAssets: ["favicon.ico", "robots.txt"],
       workbox: {
+        importScripts: ["firebase-init-sw.js"],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

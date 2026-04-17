@@ -1,10 +1,6 @@
 importScripts('https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.10.0/firebase-messaging-compat.js');
 
-// NOTE: No install/activate handlers here.
-// VitePWA's generated sw.js handles skipWaiting + clientsClaim.
-// Adding them here causes SW conflicts on mobile browsers.
-
 firebase.initializeApp({
   apiKey: "AIzaSyB9wHnIbjKNjSZMPHJ0lhkqmy7Dk4upHPI",
   authDomain: "solid-depot-483510-d6.firebaseapp.com",
