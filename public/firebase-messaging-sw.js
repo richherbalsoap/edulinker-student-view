@@ -1,13 +1,9 @@
 importScripts('https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.10.0/firebase-messaging-compat.js');
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
+// NOTE: No install/activate handlers here.
+// VitePWA's generated sw.js handles skipWaiting + clientsClaim.
+// Adding them here causes SW conflicts on mobile browsers.
 
 firebase.initializeApp({
   apiKey: "AIzaSyB9wHnIbjKNjSZMPHJ0lhkqmy7Dk4upHPI",
