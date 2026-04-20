@@ -74,6 +74,24 @@ const StudentDashboard = () => {
   const dateResults = activeResults.filter(r => matchesDate(r.created_at));
   const hasDateData = dateHomework.length > 0 || dateComplaints.length > 0 || dateResults.length > 0;
 
+  // Build a set of day numbers (in current calendar month/year) that have any activity
+  const activityDays = useMemo(() => {
+    const days = new Set<number>();
+    const collect = (items: any[]) => {
+      items.forEach(item => {
+        if (!item.created_at) return;
+        const d = new Date(item.created_at);
+        if (d.getMonth() === calMonth && d.getFullYear() === calYear) {
+          days.add(d.getDate());
+        }
+      });
+    };
+    collect(activeHomework);
+    collect(activeComplaints);
+    collect(activeResults);
+    return days;
+  }, [activeHomework, activeComplaints, activeResults, calMonth, calYear]);
+
   const statCards = [
     { icon: LayoutDashboard, label: 'Class', value: `${student?.standard}-${student?.section}` },
     { icon: TrendingUp, label: 'Overall %', value: activeResults.length ? `${overallPercentage}%` : '--' },
@@ -154,16 +172,24 @@ const StudentDashboard = () => {
               const day = i + 1;
               const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
               const isSelected = day === selectedDate.getDate() && calMonth === selectedDate.getMonth() && calYear === selectedDate.getFullYear();
+              const hasActivity = activityDays.has(day);
               return (
                 <div
                   key={day}
                   onClick={() => setSelectedDate(new Date(calYear, calMonth, day))}
-                  className={`py-1 sm:py-1.5 rounded cursor-pointer transition-all duration-200 text-xs sm:text-sm
+                  className={`relative py-1 sm:py-1.5 rounded cursor-pointer transition-all duration-200 text-xs sm:text-sm
                     ${isSelected ? 'bg-primary text-primary-foreground font-bold shadow-[0_0_10px_hsl(51,100%,50%,0.4)]'
                       : isToday ? 'bg-primary/20 text-primary font-bold border border-primary/30'
                       : 'text-foreground/70 hover:bg-primary/10 hover:text-foreground'}`}
                 >
                   {day}
+                  {hasActivity && (
+                    <span
+                      className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full ${
+                        isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                      }`}
+                    />
+                  )}
                 </div>
               );
             })}
