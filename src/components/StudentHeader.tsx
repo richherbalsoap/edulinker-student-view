@@ -1,16 +1,37 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { LogOut, User, Menu, Calendar } from 'lucide-react';
+import { LogOut, User, Menu, Calendar, RefreshCw } from 'lucide-react';
 
 const StudentHeader = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
   const { logout, student } = useStudentAuth();
   const { academicYear, setAcademicYear, yearOptions } = useAcademicYear();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      // Invalidate all react-query caches
+      await queryClient.invalidateQueries();
+      // Notify all pages to refetch their data
+      window.dispatchEvent(new CustomEvent('app-refresh'));
+      toast.success('Sab kuch update ho gaya!', { duration: 1500 });
+    } catch (e) {
+      toast.error('Refresh fail hua, dobara try karein');
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 800);
+    }
   };
 
   return (
@@ -50,6 +71,15 @@ const StudentHeader = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
             </div>
             <span className="text-foreground/90 text-sm font-medium hidden sm:block">{student?.name || 'Student'}</span>
           </div>
+
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Refresh data"
+            className="p-2 rounded-lg border border-primary/20 bg-card/30 text-primary hover:bg-primary/10 hover:border-primary/40 active:bg-primary/20 transition-colors duration-200 disabled:opacity-60"
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          </button>
 
           <button
             onClick={handleLogout}

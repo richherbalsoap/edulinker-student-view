@@ -4,6 +4,7 @@ import { useDateFilter } from "@/context/DateFilterContext";
 import { supabase } from "@/integrations/supabase/client";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from "@/lib/queryFilters";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 import { FileText, ExternalLink, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import DeleteButton from "@/components/DeleteButton";
 import { useDeletedItems } from "@/context/DeletedItemsContext";
@@ -97,6 +98,7 @@ const ResultsPage = () => {
     fetchResults();
   }, [fetchResults]);
   useRealtimeSubscription("results", fetchResults, !!student);
+  useAppRefresh(fetchResults);
 
   const filtered = results.filter((r) => !isDeleted(r.id));
   const grouped = groupByExam(filtered);

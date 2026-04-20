@@ -4,6 +4,7 @@ import { useDateFilter } from "@/context/DateFilterContext";
 import { supabase } from "@/integrations/supabase/client";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from "@/lib/queryFilters";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 import { IndianRupee, QrCode, X } from "lucide-react";
 
 const FeesPage = () => {
@@ -59,6 +60,7 @@ const FeesPage = () => {
   }, [fetchFees, schoolId]);
 
   useRealtimeSubscription('fees_reminders', fetchFees, !!student);
+  useAppRefresh(fetchFees);
 
   return (
     <div className="space-y-4 sm:space-y-6 relative z-10 px-3 sm:px-4 py-4 sm:py-6">
