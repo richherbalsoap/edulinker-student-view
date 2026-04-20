@@ -73,6 +73,15 @@ const StudentHeader = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
           </div>
 
           <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Refresh data"
+            className="p-2 rounded-lg border border-primary/20 bg-card/30 text-primary hover:bg-primary/10 hover:border-primary/40 active:bg-primary/20 transition-colors duration-200 disabled:opacity-60"
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          </button>
+
+          <button
             onClick={handleLogout}
             className="p-2 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors duration-200"
           >
