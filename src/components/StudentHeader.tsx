@@ -1,16 +1,37 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useAcademicYear } from '@/context/AcademicYearContext';
-import { LogOut, User, Menu, Calendar } from 'lucide-react';
+import { LogOut, User, Menu, Calendar, RefreshCw } from 'lucide-react';
 
 const StudentHeader = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
   const { logout, student } = useStudentAuth();
   const { academicYear, setAcademicYear, yearOptions } = useAcademicYear();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      // Invalidate all react-query caches
+      await queryClient.invalidateQueries();
+      // Notify all pages to refetch their data
+      window.dispatchEvent(new CustomEvent('app-refresh'));
+      toast.success('Sab kuch update ho gaya!', { duration: 1500 });
+    } catch (e) {
+      toast.error('Refresh fail hua, dobara try karein');
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 800);
+    }
   };
 
   return (
