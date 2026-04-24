@@ -50,7 +50,6 @@ const HomeworkPage = () => {
 
   useEffect(() => { fetchHomework(); }, [fetchHomework]);
   useRealtimeSubscription('homework', fetchHomework, !!student);
-  useAppRefresh(fetchHomework);
 
   return (
     <div className="space-y-4 sm:space-y-6 relative z-10 px-3 sm:px-4 py-4 sm:py-6">

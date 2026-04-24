@@ -44,7 +44,6 @@ const ComplaintsPage = () => {
 
   useEffect(() => { fetchComplaints(); }, [fetchComplaints]);
   useRealtimeSubscription('complaints', fetchComplaints, !!student);
-  useAppRefresh(fetchComplaints);
 
   const filtered = complaints.filter(c => !isDeleted(c.id));
 

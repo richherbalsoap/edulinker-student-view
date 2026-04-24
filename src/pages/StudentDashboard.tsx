@@ -46,7 +46,6 @@ const StudentDashboard = () => {
   useRealtimeSubscription('results', fetchData, !!student);
   useRealtimeSubscription('homework', fetchData, !!student);
   useRealtimeSubscription('complaints', fetchData, !!student);
-  useAppRefresh(fetchData);
 
   const activeResults = useMemo(() => results.filter(r => !isDeleted(r.id)), [results, isDeleted]);
   const activeHomework = useMemo(() => homework.filter(h => !isDeleted(h.id)), [homework, isDeleted]);

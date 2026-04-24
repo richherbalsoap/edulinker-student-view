@@ -98,7 +98,6 @@ const ResultsPage = () => {
     fetchResults();
   }, [fetchResults]);
   useRealtimeSubscription("results", fetchResults, !!student);
-  useAppRefresh(fetchResults);
 
   const filtered = results.filter((r) => !isDeleted(r.id));
   const grouped = groupByExam(filtered);
