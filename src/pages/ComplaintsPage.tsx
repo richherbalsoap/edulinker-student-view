@@ -4,7 +4,7 @@ import { useDateFilter } from '@/context/DateFilterContext';
 import { supabase } from '@/integrations/supabase/client';
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
-import { useAppRefresh } from '@/hooks/useAppRefresh';
+
 import { MessageSquare, ExternalLink } from 'lucide-react';
 import DeleteButton from '@/components/DeleteButton';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
@@ -44,7 +44,6 @@ const ComplaintsPage = () => {
 
   useEffect(() => { fetchComplaints(); }, [fetchComplaints]);
   useRealtimeSubscription('complaints', fetchComplaints, !!student);
-  useAppRefresh(fetchComplaints);
 
   const filtered = complaints.filter(c => !isDeleted(c.id));
 
