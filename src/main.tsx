@@ -9,8 +9,7 @@ declare global {
   }
 }
 
-const UPDATE_CHECK_INTERVAL = 15 * 1000;
-const RUNTIME_CACHES = ["assets-cache", "html-cache"];
+const UPDATE_CHECK_INTERVAL = 5 * 1000;
 
 const isInIframe = (() => {
   try { return window.self !== window.top; } catch { return true; }
@@ -23,11 +22,7 @@ const clearRuntimeCaches = async () => {
   if (!("caches" in window)) return;
 
   const cacheNames = await caches.keys();
-  await Promise.all(
-    cacheNames
-      .filter((name) => RUNTIME_CACHES.some((cacheKey) => name.includes(cacheKey)))
-      .map((name) => caches.delete(name)),
-  );
+  await Promise.all(cacheNames.map((name) => caches.delete(name)));
 };
 
 const getCurrentBundleUrl = () =>

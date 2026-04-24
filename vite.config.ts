@@ -33,12 +33,20 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.(js|css|png|jpg|jpeg|svg|ico|webp|woff2?)$/,
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: /^https:\/\/.*\.(js|css|html)$/,
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|ico|webp|woff2?)$/,
             handler: "NetworkFirst",
             options: {
               cacheName: "assets-cache",
-              expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 },
-              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 },
+              networkTimeoutSeconds: 2,
             },
           },
         ],
