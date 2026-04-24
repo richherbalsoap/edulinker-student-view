@@ -5,7 +5,7 @@ import { useDeletedItems } from '@/context/DeletedItemsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
-import { useAppRefresh } from '@/hooks/useAppRefresh';
+
 import { LayoutDashboard, BookOpen, FileText, TrendingUp, Calendar, AlertTriangle } from 'lucide-react';
 
 const StudentDashboard = () => {
