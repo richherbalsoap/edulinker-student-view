@@ -9,8 +9,7 @@ declare global {
   }
 }
 
-const UPDATE_CHECK_INTERVAL = 15 * 1000;
-const RUNTIME_CACHES = ["assets-cache", "html-cache"];
+const UPDATE_CHECK_INTERVAL = 5 * 1000;
 
 const isInIframe = (() => {
   try { return window.self !== window.top; } catch { return true; }
