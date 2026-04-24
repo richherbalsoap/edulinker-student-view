@@ -22,11 +22,7 @@ const clearRuntimeCaches = async () => {
   if (!("caches" in window)) return;
 
   const cacheNames = await caches.keys();
-  await Promise.all(
-    cacheNames
-      .filter((name) => RUNTIME_CACHES.some((cacheKey) => name.includes(cacheKey)))
-      .map((name) => caches.delete(name)),
-  );
+  await Promise.all(cacheNames.map((name) => caches.delete(name)));
 };
 
 const getCurrentBundleUrl = () =>
