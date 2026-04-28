@@ -10,7 +10,15 @@ const StudentLayout = () => {
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div
+      className="flex h-screen bg-background"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
       <GoldenBackground />
       <StudentSidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <div className="flex-1 flex flex-col overflow-hidden">
