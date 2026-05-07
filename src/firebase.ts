@@ -1,7 +1,5 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { Capacitor } from "@capacitor/core";
-import { PushNotifications } from "@capacitor/push-notifications";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB9wHnIbjKNjSZMPHJ0lhkqmy7Dk4upHPI",
@@ -16,10 +14,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
 
+const isCapacitorNative = (): boolean => {
+  return !!(window as any).Capacitor?.isNativePlatform?.();
+};
+
 export const requestNotificationPermission = async (): Promise<string | null> => {
   try {
-    // Capacitor Android/iOS
-    if (Capacitor.isNativePlatform()) {
+    if (isCapacitorNative()) {
+      const { PushNotifications } = await import("@capacitor/push-notifications");
       await PushNotifications.requestPermissions();
       await PushNotifications.register();
 
@@ -41,7 +43,6 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
       const token = await getToken(messaging, {
         vapidKey: "BLoKIG-AEZukS3xro0TaRuiKppU4vq8svzmdqTRoTYVkCie0fh1_qNWuPDs0H_mieqKSqQrrVLeQq-4HLjgxX1k",
       });
-      console.log("FCM Token:", token);
       return token;
     }
     return null;
