@@ -21,20 +21,26 @@ const isCapacitorNative = (): boolean => {
 export const requestNotificationPermission = async (): Promise<string | null> => {
   try {
     if (isCapacitorNative()) {
-      const { PushNotifications } = await import("@capacitor/push-notifications");
-      await PushNotifications.requestPermissions();
-      await PushNotifications.register();
+      try {
+        const mod = await import(/* @vite-ignore */ "@capacitor/push-notifications");
+        const PushNotifications = mod.PushNotifications;
+        await PushNotifications.requestPermissions();
+        await PushNotifications.register();
 
-      return new Promise((resolve) => {
-        PushNotifications.addListener("registration", (token) => {
-          console.log("Capacitor FCM Token:", token.value);
-          resolve(token.value);
+        return new Promise((resolve) => {
+          PushNotifications.addListener("registration", (token: any) => {
+            console.log("Capacitor FCM Token:", token.value);
+            resolve(token.value);
+          });
+          PushNotifications.addListener("registrationError", (err: any) => {
+            console.error("Capacitor registration error:", err);
+            resolve(null);
+          });
         });
-        PushNotifications.addListener("registrationError", (err) => {
-          console.error("Capacitor registration error:", err);
-          resolve(null);
-        });
-      });
+      } catch (e) {
+        console.warn("Capacitor PushNotifications not available:", e);
+        return null;
+      }
     }
 
     // Web/PWA
