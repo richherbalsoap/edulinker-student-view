@@ -43,6 +43,12 @@ class ApiQueryBuilder {
     return this;
   }
 
+  upsert(data: any) {
+    this.method = 'insert';
+    this.payload = data;
+    return this;
+  }
+
   update(data: any) {
     this.method = 'update';
     this.payload = data;
@@ -349,6 +355,7 @@ export const apiClient = {
           try {
             const formData = new FormData();
             formData.append('file', file, file.name);
+            formData.append('path', path);
 
             const res = await fetch(`${WORKER_URL}/api/upload`, {
               method: 'POST',
