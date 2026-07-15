@@ -89,6 +89,16 @@ class ApiQueryBuilder {
     return this;
   }
 
+  maybeSingle() {
+    this.isSingle = true;
+    return this;
+  }
+
+  limit(count: number) {
+    // Stub
+    return this;
+  }
+
   // Support for Promise then/catch (async/await)
   async then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
     try {
