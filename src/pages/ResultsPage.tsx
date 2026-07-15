@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useDateFilter } from "@/context/DateFilterContext";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from "@/lib/queryFilters";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
@@ -9,12 +9,12 @@ import { FileText, ExternalLink, ChevronDown, ChevronUp, TrendingUp } from "luci
 import DeleteButton from "@/components/DeleteButton";
 import { useDeletedItems } from "@/context/DeletedItemsContext";
 
-const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://edulinker-worker.dominatorenterprise04.workers.dev";
 
 const getFilePublicUrl = (filePath: string) => {
   if (!filePath) return "";
   if (filePath.startsWith("http")) return filePath;
-  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${filePath}`;
+  return `${WORKER_URL}/api/files/${filePath}`;
 };
 
 const isImageFile = (filePath: string) => {
@@ -85,7 +85,7 @@ const ResultsPage = () => {
   const fetchResults = useCallback(async () => {
     if (!student) return;
     setLoading(true);
-    let query = supabase.from("results").select("*").eq("student_id", student.id);
+    let query = apiClient.from("results").select("*").eq("student_id", student.id);
     query = applySchoolScopeFilter(query, schoolId, filterType === "all");
     query = applyCreatedAtFilter(query, filterType, startDate, endDate);
     const { data, error } = await query.order("created_at", { ascending: false });

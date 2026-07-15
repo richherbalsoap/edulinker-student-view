@@ -13,7 +13,7 @@ import {
   Award,
   AlertCircle,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/apiClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,7 +143,7 @@ const ReportPage = () => {
         if (!secretId) throw new Error("Student not logged in.");
 
         // 1. Get student record by secret_id
-        const { data: stdData, error: stdErr } = await supabase
+        const { data: stdData, error: stdErr } = await apiClient
           .from("students")
           .select("id, name, standard, section, roll_no, school_id")
           .eq("secret_id", secretId)
@@ -158,7 +158,7 @@ const ReportPage = () => {
         // 2. Fetch all data in parallel
         const [resResults, resSelfResults, resHomework, resAnnouncements, resComplaints, resFees] = await Promise.all([
           // Admin-uploaded results for this student
-          supabase
+          apiClient
             .from("results")
             .select("id, subject, exam_name, marks_obtained, total_marks, percentage, created_at, source")
             .eq("student_id", sid)
@@ -166,7 +166,7 @@ const ReportPage = () => {
             .order("created_at", { ascending: false }),
 
           // Self-uploaded results by student
-          supabase
+          apiClient
             .from("student_self_results")
             .select("id, subject, exam_name, marks_obtained, total_marks, percentage, created_at, source")
             .eq("student_id", sid)
@@ -174,7 +174,7 @@ const ReportPage = () => {
             .order("created_at", { ascending: false }),
 
           // Homework for this student's class + section
-          supabase
+          apiClient
             .from("homework")
             .select("id, subject, description, created_at, file_url")
             .eq("school_id", schoolId)
@@ -184,7 +184,7 @@ const ReportPage = () => {
             .order("created_at", { ascending: false }),
 
           // School-wide announcements
-          supabase
+          apiClient
             .from("announcements")
             .select("id, title, content, type, created_at")
             .eq("school_id", schoolId)
@@ -192,7 +192,7 @@ const ReportPage = () => {
             .order("created_at", { ascending: false }),
 
           // Complaints filed for this student
-          supabase
+          apiClient
             .from("complaints")
             .select("id, description, created_at, file_url")
             .eq("student_id", sid)
@@ -200,7 +200,7 @@ const ReportPage = () => {
             .order("created_at", { ascending: false }),
 
           // Fee reminders for this student
-          supabase
+          apiClient
             .from("fees_reminders")
             .select("id, title, message, amount, created_at")
             .eq("student_id", sid)

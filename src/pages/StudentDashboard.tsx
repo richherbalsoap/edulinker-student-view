@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
@@ -21,19 +21,19 @@ const StudentDashboard = () => {
     if (!student) return;
     const includeLegacyNull = filterType === 'all';
 
-    let resultsQuery = supabase.from('results').select('*').eq('student_id', student.id);
+    let resultsQuery = apiClient.from('results').select('*').eq('student_id', student.id);
     resultsQuery = applySchoolScopeFilter(resultsQuery, schoolId, includeLegacyNull);
     resultsQuery = applyCreatedAtFilter(resultsQuery, filterType, startDate, endDate);
     const { data: res } = await resultsQuery;
     setResults(res || []);
 
-    let homeworkQuery = supabase.from('homework').select('*').ilike('standard', student.standard).ilike('section', student.section);
+    let homeworkQuery = apiClient.from('homework').select('*').ilike('standard', student.standard).ilike('section', student.section);
     homeworkQuery = applySchoolScopeFilter(homeworkQuery, schoolId, includeLegacyNull);
     homeworkQuery = applyCreatedAtFilter(homeworkQuery, filterType, startDate, endDate);
     const { data: hw } = await homeworkQuery;
     setHomework(hw || []);
 
-    let complaintsQuery = supabase.from('complaints').select('*').eq('student_id', student.id);
+    let complaintsQuery = apiClient.from('complaints').select('*').eq('student_id', student.id);
     complaintsQuery = applySchoolScopeFilter(complaintsQuery, schoolId, includeLegacyNull);
     complaintsQuery = applyCreatedAtFilter(complaintsQuery, filterType, startDate, endDate);
     const { data: comp } = await complaintsQuery;

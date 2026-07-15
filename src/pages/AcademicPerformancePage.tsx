@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useDateFilter } from "@/context/DateFilterContext";
 import { useDeletedItems } from "@/context/DeletedItemsContext";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from "@/lib/queryFilters";
 import {
   TrendingUp,
@@ -283,7 +283,7 @@ const AcademicPerformancePage = () => {
     if (!student) return;
     const fetchData = async () => {
       setLoading(true);
-      let query = supabase.from("results").select("*").eq("student_id", student.id);
+      let query = apiClient.from("results").select("*").eq("student_id", student.id);
       query = applySchoolScopeFilter(query, schoolId, filterType === "all");
       query = applyCreatedAtFilter(query, filterType, startDate, endDate);
       const { data } = await query.order("created_at", { ascending: true });

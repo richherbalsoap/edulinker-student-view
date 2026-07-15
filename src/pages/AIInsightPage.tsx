@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { Bot, Send, User } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const AIInsightPage = () => {
   useEffect(() => {
     if (!student) return;
     const fetch = async () => {
-      let query = supabase
+      let query = apiClient
         .from('results')
         .select('*')
         .eq('student_id', student.id);

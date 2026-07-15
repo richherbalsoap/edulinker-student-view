@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
@@ -19,7 +19,7 @@ const AnnouncementsPage = () => {
   const fetchAnnouncements = useCallback(async () => {
     if (!isLoggedIn) return;
     setLoading(true);
-    let query = supabase.from('announcements').select('*');
+    let query = apiClient.from('announcements').select('*');
     query = applySchoolScopeFilter(query, schoolId, filterType === 'all');
     query = applyCreatedAtFilter(query, filterType, startDate, endDate);
     const { data, error } = await query.order('created_at', { ascending: false });

@@ -1,9 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useRef } from 'react';
 
 /**
- * Subscribe to realtime changes on a Supabase table.
- * Calls `onUpdate` whenever an INSERT, UPDATE, or DELETE happens.
+ * Polling alternative to realtime changes.
+ * Calls `onUpdate` periodically.
  */
 export function useRealtimeSubscription(
   tableName: string,
@@ -16,19 +15,13 @@ export function useRealtimeSubscription(
   useEffect(() => {
     if (!enabled) return;
 
-    const channel = supabase
-      .channel(`${tableName}-realtime-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: tableName },
-        () => {
-          onUpdateRef.current();
-        }
-      )
-      .subscribe();
+    // Fetch every 10 seconds
+    const interval = window.setInterval(() => {
+      onUpdateRef.current();
+    }, 10000);
 
     return () => {
-      supabase.removeChannel(channel);
+      window.clearInterval(interval);
     };
   }, [tableName, enabled]);
 }

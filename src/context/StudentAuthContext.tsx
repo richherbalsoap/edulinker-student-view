@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/apiClient";
 import { requestNotificationPermission } from "@/firebase";
 
 interface StudentData {
@@ -34,8 +34,8 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const savedStudentId = localStorage.getItem(LINKED_STUDENT_KEY);
     const savedSchoolId = localStorage.getItem(LINKED_SCHOOL_KEY);
     if (savedStudentId && savedSchoolId) {
-      // Fetch student data from Supabase to restore session
-      supabase
+      // Fetch student data from apiClient to restore session
+      apiClient
         .from("students")
         .select("id, name, standard, section, avatar_url")
         .eq("id", savedStudentId)
@@ -89,7 +89,7 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (isNaN(rollNoInt)) throw new Error("Roll number must be a valid number");
 
     // Saare students fetch karo same secret_id se (multiple schools ho sakti hain)
-    const { data: rows, error } = await supabase
+    const { data: rows, error } = await apiClient
       .from("students")
       .select("id, name, standard, section, avatar_url, school_id, roll_no, failed_attempts")
       .eq("secret_id", secretId.trim());
@@ -106,7 +106,7 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const currentAttempts = firstRow.failed_attempts || 0;
       const newAttempts = currentAttempts + 1;
 
-      await supabase
+      await apiClient
         .from("students")
         .update({ failed_attempts: newAttempts } as any)
         .eq("id", firstRow.id);
@@ -122,7 +122,7 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     // Login successful — failed_attempts reset karo
-    await supabase
+    await apiClient
       .from("students")
       .update({ failed_attempts: 0 } as any)
       .eq("id", data.id);
@@ -137,7 +137,7 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     requestNotificationPermission()
       .then(async (fcmToken) => {
         if (fcmToken) {
-          await supabase.from("fcm_tokens").upsert({
+          await apiClient.from("fcm_tokens").upsert({
             student_id: data.id,
             token: fcmToken,
           });

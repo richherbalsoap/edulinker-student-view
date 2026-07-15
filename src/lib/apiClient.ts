@@ -1,10 +1,10 @@
-// Cloudflare Worker API wrapper replacing Supabase client for Student View
-const WORKER_URL = "https://edulinker-worker.dominatorenterprise04.workers.dev";
+// Cloudflare Worker API wrapper for Student View
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://edulinker-worker.dominatorenterprise04.workers.dev";
 
 // Helper: Get JWT token from localStorage
 const getStudentToken = () => localStorage.getItem('edulinker_student_token');
 
-class SupabaseQueryBuilder {
+class ApiQueryBuilder {
   private tableName: string;
   private method: 'select' | 'insert' | 'update' | 'delete' = 'select';
   private filters: { column: string; value: any; type: string }[] = [];
@@ -146,9 +146,9 @@ class SupabaseQueryBuilder {
   }
 }
 
-export const supabase = {
+export const apiClient = {
   from(tableName: string) {
-    return new SupabaseQueryBuilder(tableName);
+    return new ApiQueryBuilder(tableName);
   },
 
   auth: {

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useStudentAuth } from '@/context/StudentAuthContext';
 import { useDateFilter } from '@/context/DateFilterContext';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from '@/lib/queryFilters';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
@@ -9,12 +9,12 @@ import { BookOpen, ExternalLink } from 'lucide-react';
 import DeleteButton from '@/components/DeleteButton';
 import { useDeletedItems } from '@/context/DeletedItemsContext';
 
-const SUPABASE_URL = "https://sdvxekymbfyrznhuvvtj.supabase.co";
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://edulinker-worker.dominatorenterprise04.workers.dev";
 
 const getFilePublicUrl = (filePath: string) => {
   if (!filePath) return '';
   if (filePath.startsWith('http')) return filePath;
-  return `${SUPABASE_URL}/storage/v1/object/public/edulinker-files/${filePath}`;
+  return `${WORKER_URL}/api/files/${filePath}`;
 };
 
 const isImageFile = (filePath: string) => {
@@ -33,7 +33,7 @@ const HomeworkPage = () => {
   const fetchHomework = useCallback(async () => {
     if (!student) return;
     setLoading(true);
-    let query = supabase
+    let query = apiClient
       .from('homework')
       .select('*')
       .ilike('standard', student.standard)

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useStudentAuth } from "@/context/StudentAuthContext";
 import { useDateFilter } from "@/context/DateFilterContext";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/apiClient";
 import { applyCreatedAtFilter, applySchoolScopeFilter } from "@/lib/queryFilters";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
@@ -21,14 +21,14 @@ const FeesPage = () => {
     const includeLegacyNull = filterType === "all";
 
     const buildStudentFeesQuery = () => {
-      let query = supabase.from("fees_reminders").select("*").eq("student_id", student.id);
+      let query = apiClient.from("fees_reminders").select("*").eq("student_id", student.id);
       query = applySchoolScopeFilter(query, schoolId, includeLegacyNull);
       query = applyCreatedAtFilter(query, filterType, startDate, endDate);
       return query.order("created_at", { ascending: false });
     };
 
     const buildClassFeesQuery = () => {
-      let query = supabase
+      let query = apiClient
         .from("fees_reminders")
         .select("*")
         .is("student_id", null)
@@ -53,7 +53,7 @@ const FeesPage = () => {
     fetchFees();
     if (schoolId) {
       (async () => {
-        const { data } = await (supabase.from("schools") as any).select("payment_qr_url").eq("id", schoolId).single();
+        const { data } = await (apiClient.from("schools") as any).select("payment_qr_url").eq("id", schoolId).single();
         if (data?.payment_qr_url) setPaymentQr(data.payment_qr_url);
       })();
     }
