@@ -1,8 +1,25 @@
-// Cloudflare Worker API wrapper for Student View
+// Cloudflare Worker API wrapper replacing apiClient client
 const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://edulinker-worker.dominatorenterprise04.workers.dev";
 
 // Helper: Get JWT token from localStorage
-const getStudentToken = () => localStorage.getItem('edulinker_student_token');
+const getAuthToken = () => localStorage.getItem('edulinker_admin_token');
+
+// Helper: Parse JWT payload
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
 
 class ApiQueryBuilder {
   private tableName: string;
@@ -42,12 +59,28 @@ class ApiQueryBuilder {
     return this;
   }
 
+  gte(column: string, value: any) {
+    this.filters.push({ column, value, type: 'gte' });
+    return this;
+  }
+
+  lte(column: string, value: any) {
+    this.filters.push({ column, value, type: 'lte' });
+    return this;
+  }
+
+  in(column: string, value: any[]) {
+    this.filters.push({ column, value, type: 'in' });
+    return this;
+  }
+
   ilike(column: string, value: any) {
     this.filters.push({ column, value, type: 'ilike' });
     return this;
   }
 
   order(column: string, options?: { ascending: boolean }) {
+    // Basic sorting stub
     return this;
   }
 
@@ -56,6 +89,7 @@ class ApiQueryBuilder {
     return this;
   }
 
+  // Support for Promise then/catch (async/await)
   async then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
     try {
       const result = await this.execute();
@@ -68,7 +102,7 @@ class ApiQueryBuilder {
   }
 
   private async execute() {
-    const token = getStudentToken();
+    const token = getAuthToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -76,6 +110,8 @@ class ApiQueryBuilder {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Determine endpoint
+    // Standardize endpoint mapping
     let endpoint = `/api/${this.tableName}`;
     if (this.tableName === 'fees_reminders') {
       endpoint = '/api/fees';
@@ -89,6 +125,7 @@ class ApiQueryBuilder {
 
     if (this.method === 'select') {
       method = 'GET';
+      // Append query params
       const params = new URLSearchParams();
       this.filters.forEach(f => {
         params.append(f.column, String(f.value));
@@ -125,17 +162,6 @@ class ApiQueryBuilder {
       }
 
       let data = await res.json();
-
-      // Intercept students query to extract and save the student JWT token
-      if (this.tableName === 'students' && data) {
-        const rows = Array.isArray(data) ? data : [data];
-        rows.forEach(r => {
-          if (r && r.token) {
-            localStorage.setItem('edulinker_student_token', r.token);
-          }
-        });
-      }
-
       if (this.isSingle && Array.isArray(data)) {
         data = data[0] || null;
       }
@@ -146,18 +172,166 @@ class ApiQueryBuilder {
   }
 }
 
+// Emulate client structure
 export const apiClient = {
   from(tableName: string) {
     return new ApiQueryBuilder(tableName);
   },
 
-  auth: {
-    async signOut() {
-      localStorage.removeItem('edulinker_student_token');
-      return { error: null };
+  // Mock RPC functions calling the API
+  async rpc(fnName: string, args: any) {
+    if (fnName === 'upsert_school_for_clerk_user') {
+      // Return user's school_id
+      const token = getAuthToken();
+      if (!token) return { data: null, error: new Error('Unauthorized') };
+      const payload = parseJwt(token);
+      return { data: payload?.schoolId || null, error: null };
+    }
+    return { data: null, error: new Error(`RPC ${fnName} not implemented`) };
+  },
+
+  // Mock edge functions service
+  functions: {
+    async invoke(fnName: string, options?: any) {
+      console.log(`Invoking mock edge function: ${fnName}`, options);
+      return { data: { success: true }, error: null };
     }
   },
 
+  // Mock auth service
+  auth: {
+    async signInWithPassword({ email, password }: any) {
+      try {
+        const res = await fetch(`${WORKER_URL}/api/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+        if (!res.ok) {
+          return { data: { user: null }, error: new Error(result.error || 'Login failed') };
+        }
+        localStorage.setItem('edulinker_admin_token', result.token);
+        authListeners.forEach(listener => listener('SIGNED_IN', this.getSessionSync()));
+        return {
+          data: {
+            user: { id: result.user.id, email: result.user.email, email_confirmed_at: new Date().toISOString() }
+          },
+          error: null
+        };
+      } catch (e: any) {
+        return { data: { user: null }, error: e };
+      }
+    },
+
+    async signUp({ email, password, options }: any) {
+      try {
+        const schoolName = options?.data?.school_name || "My School";
+        const res = await fetch(`${WORKER_URL}/api/admin/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, schoolName })
+        });
+        const result = await res.json();
+        if (!res.ok) {
+          return { data: { user: null }, error: new Error(result.error || 'Signup failed') };
+        }
+        // Save token (it might be null until verified, but we generate it for convenience)
+        if (result.token) {
+          localStorage.setItem('edulinker_admin_token', result.token);
+        }
+        authListeners.forEach(listener => listener('SIGNED_UP', this.getSessionSync()));
+        return {
+          data: {
+            // Set email_confirmed_at to new Date().toISOString() so they can login immediately
+            user: { id: result.user.id, email: result.user.email, email_confirmed_at: new Date().toISOString() }
+          },
+          error: null
+        };
+      } catch (e: any) {
+        return { data: { user: null }, error: e };
+      }
+    },
+
+    async signOut() {
+      localStorage.removeItem('edulinker_admin_token');
+      authListeners.forEach(listener => listener('SIGNED_OUT', null));
+      return { error: null };
+    },
+
+    getSessionSync() {
+      const token = getAuthToken();
+      if (!token) return null;
+      const payload = parseJwt(token);
+      if (!payload) return null;
+      return {
+        access_token: token,
+        user: { id: payload.userId, email: payload.email, email_confirmed_at: new Date().toISOString() }
+      };
+    },
+
+    async getSession() {
+      const session = this.getSessionSync();
+      return { data: { session }, error: null };
+    },
+
+    async getUser() {
+      const session = this.getSessionSync();
+      return { data: { user: session?.user || null }, error: null };
+    },
+
+    async resetPasswordForEmail(email: string, options?: any) {
+      try {
+        const res = await fetch(`${WORKER_URL}/api/admin/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const result = await res.json();
+        if (!res.ok) return { error: new Error(result.error || 'Forgot password request failed') };
+        return { data: {}, error: null };
+      } catch (e: any) {
+        return { error: e };
+      }
+    },
+
+    async updateUser({ password }: any) {
+      try {
+        const token = getAuthToken();
+        const res = await fetch(`${WORKER_URL}/api/admin/update-user`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ password })
+        });
+        const result = await res.json();
+        if (!res.ok) return { data: null, error: new Error(result.error || 'Password update failed') };
+        return { data: { user: this.getSessionSync()?.user }, error: null };
+      } catch (e: any) {
+        return { data: null, error: e };
+      }
+    },
+
+    onAuthStateChange(callback: (event: string, session: any) => void) {
+      authListeners.push(callback);
+      const session = this.getSessionSync();
+      callback(session ? 'SIGNED_IN' : 'SIGNED_OUT', session);
+      return {
+        data: {
+          subscription: {
+            unsubscribe() {
+              const index = authListeners.indexOf(callback);
+              if (index !== -1) authListeners.splice(index, 1);
+            }
+          }
+        }
+      };
+    }
+  },
+
+  // Mock Storage for R2
   storage: {
     from(bucketName: string) {
       return {
@@ -190,3 +364,5 @@ export const apiClient = {
     }
   }
 };
+
+const authListeners: ((event: string, session: any) => void)[] = [];
