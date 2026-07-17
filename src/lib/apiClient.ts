@@ -86,7 +86,7 @@ class ApiQueryBuilder {
   }
 
   order(column: string, options?: { ascending: boolean }) {
-    // Basic sorting stub
+    this.filters.push({ column: 'order', value: `${column}.${options?.ascending === false ? 'desc' : 'asc'}`, type: 'order' });
     return this;
   }
 
@@ -101,7 +101,17 @@ class ApiQueryBuilder {
   }
 
   limit(count: number) {
-    // Stub
+    this.filters.push({ column: 'limit', value: count, type: 'limit' });
+    return this;
+  }
+
+  is(column: string, value: any) {
+    this.filters.push({ column, value, type: 'is' });
+    return this;
+  }
+
+  or(query: string) {
+    this.filters.push({ column: 'or', value: `(${query})`, type: 'or' });
     return this;
   }
 
@@ -144,7 +154,17 @@ class ApiQueryBuilder {
       // Append query params
       const params = new URLSearchParams();
       this.filters.forEach(f => {
-        params.append(f.column, String(f.value));
+        if (f.type === 'or') {
+          params.append('or', f.value);
+        } else if (f.type === 'order') {
+          params.append('order', f.value);
+        } else if (f.type === 'limit') {
+          params.append('limit', String(f.value));
+        } else if (f.type === 'is') {
+          params.append(f.column, `is.${f.value}`);
+        } else {
+          params.append(f.column, String(f.value));
+        }
       });
       if (params.toString()) {
         url += `?${params.toString()}`;
@@ -355,7 +375,8 @@ export const apiClient = {
           try {
             const formData = new FormData();
             formData.append('file', file, file.name);
-            formData.append('path', path);
+            // Prepend bucketName to act as the root folder in R2
+            formData.append('path', `${bucketName}/${path}`);
 
             const res = await fetch(`${WORKER_URL}/api/upload`, {
               method: 'POST',
