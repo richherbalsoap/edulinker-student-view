@@ -137,10 +137,15 @@ export const StudentAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     requestNotificationPermission()
       .then(async (fcmToken) => {
         if (fcmToken) {
-          await apiClient.from("fcm_tokens").upsert({
-            student_id: data.id,
-            token: fcmToken,
-          });
+          try {
+            await fetch(`${apiClient.baseUrl}/api/fcm/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ student_id: data.id, token: fcmToken })
+            });
+          } catch (e) {
+            console.error("FCM API register failed", e);
+          }
         }
       })
       .catch((err) => {
