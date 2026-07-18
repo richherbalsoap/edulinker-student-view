@@ -15,10 +15,10 @@ export function useRealtimeSubscription(
   useEffect(() => {
     if (!enabled) return;
 
-    // Fetch every 10 seconds
+    // Fetch every 30 seconds to save Cloudflare requests
     const interval = window.setInterval(() => {
       onUpdateRef.current();
-    }, 3000);
+    }, 30000);
 
     return () => {
       window.clearInterval(interval);
