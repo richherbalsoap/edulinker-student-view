@@ -1,97 +1,27 @@
 import { createRoot } from "react-dom/client";
-import { registerSW } from "virtual:pwa-register";
 import App from "./App.tsx";
 import "./index.css";
 
-declare global {
-  interface Window {
-    __EDULINKER_PWA_RELOADING__?: boolean;
+// Cleanup: unregister any previously installed service workers and clear caches
+// so old auto-reload behavior doesn't interfere.
+const cleanupServiceWorkers = async () => {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister().catch(() => undefined)));
+    }
+    if (typeof window !== "undefined" && "caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {
+    // ignore
   }
-}
-
-const UPDATE_CHECK_INTERVAL = 5 * 1000;
-
-const isInIframe = (() => {
-  try { return window.self !== window.top; } catch { return true; }
-})();
-const isPreviewHost =
-  window.location.hostname.includes("id-preview--") ||
-  window.location.hostname.includes("lovableproject.com");
-
-const clearRuntimeCaches = async () => {
-  if (!("caches" in window)) return;
-
-  const cacheNames = await caches.keys();
-  await Promise.all(cacheNames.map((name) => caches.delete(name)));
 };
 
-const getCurrentBundleUrl = () =>
-  document.querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')?.src ?? null;
-
-const getBundleUrlFromHtml = (html: string) => {
-  const documentFromHtml = new DOMParser().parseFromString(html, "text/html");
-  const bundlePath = documentFromHtml
-    .querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')
-    ?.getAttribute("src");
-
-  return bundlePath ? new URL(bundlePath, window.location.origin).href : null;
+const mountApp = () => {
+  createRoot(document.getElementById("root")!).render(<App />);
 };
 
-const reloadToLatestBuild = async () => {
-  if (window.__EDULINKER_PWA_RELOADING__) return;
-
-  window.__EDULINKER_PWA_RELOADING__ = true;
-  await clearRuntimeCaches().catch(() => undefined);
-  window.location.reload();
-};
-
-if (isPreviewHost || isInIframe) {
-  navigator.serviceWorker?.getRegistrations().then((regs) => {
-    regs.forEach((r) => r.unregister());
-  });
-} else {
-  const updateSW = registerSW({
-    immediate: true,
-    onNeedRefresh() {
-      updateSW(true);
-    },
-    onOfflineReady() {
-      console.log('[PWA] Offline ready');
-    },
-    onRegisteredSW(_url, registration) {
-      if (registration) {
-        const checkForLatestBuild = async () => {
-          if (document.visibilityState === "hidden") return;
-          await registration.update().catch(() => undefined);
-        };
-
-        void checkForLatestBuild();
-        window.setInterval(() => {
-          void checkForLatestBuild();
-        }, UPDATE_CHECK_INTERVAL);
-
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') {
-            void checkForLatestBuild();
-          }
-        });
-
-        window.addEventListener("focus", () => {
-          void checkForLatestBuild();
-        });
-
-        window.addEventListener("pageshow", (event) => {
-          if (event.persisted || document.visibilityState === "visible") {
-            void checkForLatestBuild();
-          }
-        });
-
-        navigator.serviceWorker?.addEventListener("controllerchange", () => {
-          void reloadToLatestBuild();
-        });
-      }
-    },
-  });
-}
-
-createRoot(document.getElementById("root")!).render(<App />);
+mountApp();
+cleanupServiceWorkers();
