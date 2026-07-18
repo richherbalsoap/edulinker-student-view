@@ -4,10 +4,12 @@ export const applyCreatedAtFilter = (
   startDate: Date,
   endDate: Date,
 ) => {
-  // Always apply date range — the range already accounts for "all" via year selector
+  // Format to SQLite format YYYY-MM-DD HH:MM:SS (Worker expects this for string comparison)
+  const formatSqliteDate = (d: Date) => d.toISOString().replace('T', ' ').substring(0, 19);
+
   return query
-    .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString());
+    .gte('created_at', formatSqliteDate(startDate))
+    .lte('created_at', formatSqliteDate(endDate));
 };
 
 export const applySchoolScopeFilter = (
