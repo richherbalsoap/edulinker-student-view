@@ -396,7 +396,26 @@ export const apiClient = {
         },
 
         getPublicUrl(path: string) {
-          return { data: { publicUrl: `${WORKER_URL}/api/files/${path}` } };
+          const finalPath = path.startsWith(`${bucketName}/`) ? path : `${bucketName}/${path}`;
+          return { data: { publicUrl: `${WORKER_URL}/api/files/${finalPath}` } };
+        },
+
+        async remove(paths: string[]) {
+          try {
+            const fullPaths = paths.map(p => p.startsWith(`${bucketName}/`) ? p : `${bucketName}/${p}`);
+            const res = await fetch(`${WORKER_URL}/api/delete`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paths: fullPaths })
+            });
+            if (!res.ok) {
+              const result = await res.json();
+              return { data: null, error: new Error(result.error || 'Delete failed') };
+            }
+            return { data: { message: 'Deleted' }, error: null };
+          } catch (e: any) {
+            return { data: null, error: e };
+          }
         }
       };
     }

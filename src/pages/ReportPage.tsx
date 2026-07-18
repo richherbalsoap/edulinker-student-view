@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://edulinker-worker.dominatorenterprise04.workers.dev";
+
+const getFilePublicUrl = (filePath: string) => {
+  if (!filePath) return '';
+  if (filePath.startsWith('http')) return filePath;
+  const finalPath = filePath.startsWith('edulinker-files/') ? filePath : `edulinker-files/${filePath}`;
+  return `${WORKER_URL}/api/files/${finalPath}`;
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StudentInfo {
@@ -362,7 +371,7 @@ const ReportPage = () => {
                   <p className="text-sm text-foreground/70">{h.description}</p>
                   {h.file_url && (
                     <a
-                      href={h.file_url}
+                      href={getFilePublicUrl(h.file_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-primary mt-1 inline-block underline"
@@ -433,7 +442,7 @@ const ReportPage = () => {
                   <p className="text-sm text-foreground/70">{c.description}</p>
                   {c.file_url && (
                     <a
-                      href={c.file_url}
+                      href={getFilePublicUrl(c.file_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-primary mt-1 inline-block underline"

@@ -62,29 +62,7 @@ if (isPreviewHost || isInIframe) {
       if (registration) {
         const checkForLatestBuild = async () => {
           if (document.visibilityState === "hidden") return;
-
           await registration.update().catch(() => undefined);
-
-          try {
-            const response = await fetch("/", {
-              cache: "no-store",
-              headers: {
-                "cache-control": "no-cache",
-                pragma: "no-cache",
-              },
-            });
-
-            if (!response.ok) return;
-
-            const nextBundleUrl = getBundleUrlFromHtml(await response.text());
-            const currentBundleUrl = getCurrentBundleUrl();
-
-            if (currentBundleUrl && nextBundleUrl && currentBundleUrl !== nextBundleUrl) {
-              await reloadToLatestBuild();
-            }
-          } catch {
-            // Ignore network failures; regular SW polling will retry.
-          }
         };
 
         void checkForLatestBuild();

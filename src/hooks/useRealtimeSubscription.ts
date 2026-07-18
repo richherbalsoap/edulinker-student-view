@@ -18,7 +18,7 @@ export function useRealtimeSubscription(
     // Fetch every 10 seconds
     const interval = window.setInterval(() => {
       onUpdateRef.current();
-    }, 10000);
+    }, 3000);
 
     return () => {
       window.clearInterval(interval);

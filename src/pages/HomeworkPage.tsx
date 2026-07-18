@@ -14,7 +14,9 @@ const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://edulinker-worker.
 const getFilePublicUrl = (filePath: string) => {
   if (!filePath) return '';
   if (filePath.startsWith('http')) return filePath;
-  return `${WORKER_URL}/api/files/${filePath}`;
+  // Files are stored in R2 under edulinker-files/ prefix
+  const finalPath = filePath.startsWith('edulinker-files/') ? filePath : `edulinker-files/${filePath}`;
+  return `${WORKER_URL}/api/files/${finalPath}`;
 };
 
 const isImageFile = (filePath: string) => {
