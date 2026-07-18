@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { StudentAuthProvider } from "@/context/StudentAuthContext";
 import { AcademicYearProvider } from "@/context/AcademicYearContext";
 import { DateFilterProvider } from "@/context/DateFilterContext";
+import { setupMessageListener } from "@/firebase";
 import { DeletedItemsProvider } from "@/context/DeletedItemsContext";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 import LoginPage from "./pages/LoginPage";
@@ -43,6 +44,10 @@ function usePWAUpdateToast() {
 
 const AppContent = () => {
   usePWAUpdateToast();
+
+  useEffect(() => {
+    setupMessageListener();
+  }, []);
 
   return (
     <BrowserRouter>

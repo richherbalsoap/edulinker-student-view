@@ -58,9 +58,18 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
   }
 };
 
-export const onMessageListener = () =>
-  new Promise((resolve) => {
+export const setupMessageListener = () => {
+  if (isCapacitorNative()) {
+    import("@capacitor/push-notifications").then((mod) => {
+      mod.PushNotifications.addListener("pushNotificationReceived", (notification) => {
+        console.log("Capacitor Push received: ", notification);
+        window.dispatchEvent(new CustomEvent('realtime-update', { detail: notification.data }));
+      });
+    }).catch(e => console.warn(e));
+  } else {
     onMessage(messaging, (payload) => {
-      resolve(payload);
+      console.log("Web Push received: ", payload);
+      window.dispatchEvent(new CustomEvent('realtime-update', { detail: payload.data }));
     });
-  });
+  }
+};

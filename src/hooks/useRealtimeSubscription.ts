@@ -15,13 +15,16 @@ export function useRealtimeSubscription(
   useEffect(() => {
     if (!enabled) return;
 
-    // Fetch every 30 seconds to save Cloudflare requests
-    const interval = window.setInterval(() => {
+    // Listen for FCM push notification updates
+    const handleUpdate = (e: Event) => {
+      // (Optional) e.detail can be checked to see if it matches the current tableName
       onUpdateRef.current();
-    }, 30000);
+    };
+
+    window.addEventListener('realtime-update', handleUpdate);
 
     return () => {
-      window.clearInterval(interval);
+      window.removeEventListener('realtime-update', handleUpdate);
     };
   }, [tableName, enabled]);
 }
