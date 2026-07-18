@@ -162,6 +162,8 @@ class ApiQueryBuilder {
           params.append('limit', String(f.value));
         } else if (f.type === 'is') {
           params.append(f.column, `is.${f.value}`);
+        } else if (['eq', 'gte', 'lte', 'ilike', 'in'].includes(f.type)) {
+          params.append(f.column, `${f.type}.${f.value}`);
         } else {
           params.append(f.column, String(f.value));
         }
